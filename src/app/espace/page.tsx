@@ -25,6 +25,13 @@ const EXTRA_CSS = `
   .pays{align-items:center}
   .pay{height:32px;padding:6px 9px;display:inline-flex;align-items:center;gap:6px}
   .pay img{height:20px;width:auto;display:block}
+  .head .r .btn,.head .out{white-space:nowrap}
+  @media(max-width:620px){
+    .head{flex-direction:column;gap:12px;padding-block:12px}
+    .head img{height:34px}
+    .head .r{width:100%;justify-content:center;gap:clamp(10px,4vw,18px);font-size:13.5px}
+    .head .r .btn{padding:8px 16px;font-size:13px}
+  }
 `;
 
 function fmt(iso: string | null): string {
@@ -100,7 +107,7 @@ export default async function Espace({
 
       <header>
         <div className="wrap head">
-          <img src="/logo.png" alt="Le Point Chablais" />
+                    <a href="/espace" aria-label="Accueil de mon espace" style={{ display: "flex" }}><img src="/logo.png" alt="Le Point Chablais" /></a>
           <div className="r">
             {active && <a className="btn btn-blue" href="#editions">E-paper</a>}
             <a className="out" href="/compte">Mon compte</a>
@@ -181,18 +188,17 @@ export default async function Espace({
             <div className="panel lib" id="editions">
               <div className="head-row">
                 <h3>Mes éditions (E-paper)</h3>
-                <span className="hint">Cliquez sur un numéro pour le lire ou le télécharger en PDF.</span>
+                <span className="hint">Cliquez sur un numéro pour l&apos;ouvrir dans la liseuse.</span>
               </div>
               <div className="grid">
                 {editions.map((e) => (
                   <div className="ed" key={e.id}>
-                    <div className="cov"><img src={`/api/cover/${e.id}`} alt="" /></div>
+                                        <a className="cov" href={`/lire/${e.id}`} style={{ display: "block" }}><img src={`/api/cover/${e.id}`} alt="" /></a>
                     <div className="body">
                       <div className="t">{e.title}</div>
                       <div className="d">{e.date}</div>
                       <div className="act">
-                        <a className="btn btn-blue" href={`/api/edition/${e.id}`} target="_blank" rel="noreferrer">Lire</a>
-                        <a className="btn btn-ghost" href={`/api/edition/${e.id}`} download>PDF</a>
+                        <a className="btn btn-blue" href={`/lire/${e.id}`}>Lire le numéro</a>
                       </div>
                     </div>
                   </div>

@@ -50,7 +50,7 @@ export default function Reset() {
     <main>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="box">
-        <img src="/logo.png" alt="Le Point Chablais" />
+        <a href="/" aria-label="Accueil" style={{ display: "block", width: "fit-content", margin: "0 auto" }}><img src="/logo.png" alt="Le Point Chablais" /></a>
         <h1>Nouveau mot de passe</h1>
         {msg && <div className={"msg " + (msg.ok ? "ok" : "err")}>{msg.t}</div>}
         {!done ? (

@@ -22,7 +22,7 @@ export default function LegalLayout({ title, children }: { title: string; childr
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <header>
         <div className="head">
-          <img src="/logo.png" alt="Le Point Chablais" />
+          <a href="/" aria-label="Accueil" style={{ display: "flex" }}><img src="/logo.png" alt="Le Point Chablais" /></a>
           <a href="/">&larr; Retour au site</a>
         </div>
       </header>

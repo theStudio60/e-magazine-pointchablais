@@ -51,7 +51,10 @@ export default function Numeros() {
               <div className="b">
                 <div style={{ fontWeight: 600, color: "var(--blue-ink)", fontSize: 13.5 }}>{e.title}</div>
                 <div style={{ color: "var(--muted)", fontSize: 12, marginBottom: 8 }}>{e.date}{e.publishAt ? ` · sortie ${e.publishAt}` : ""}</div>
-                <button className="btn btn-d" onClick={() => del(e)}>Supprimer</button>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    <a className="btn btn-o" href={`/lire/${e.id}`} target="_blank" rel="noreferrer">Aperçu</a>
+                  <button className="btn btn-d" onClick={() => del(e)}>Supprimer</button>
+                </div>
               </div>
             </div>
           ))}

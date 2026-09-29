@@ -37,7 +37,7 @@ export default function Forgot() {
     <main>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="box">
-        <img src="/logo.png" alt="Le Point Chablais" />
+        <a href="/" aria-label="Accueil" style={{ display: "block", width: "fit-content", margin: "0 auto" }}><img src="/logo.png" alt="Le Point Chablais" /></a>
         <h1>Mot de passe oublié</h1>
         <p className="l">Entrez votre e-mail pour recevoir un lien de réinitialisation.</p>
         {!done ? (

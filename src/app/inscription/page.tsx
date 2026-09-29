@@ -46,7 +46,7 @@ export default function Inscription() {
       <style dangerouslySetInnerHTML={{ __html: AUTH_CSS }} />
       <header>
         <div className="wrap head">
-          <img src="/logo.png" alt="Le Point Chablais" />
+          <a href="/" aria-label="Accueil" style={{ display: "flex" }}><img src="/logo.png" alt="Le Point Chablais" /></a>
           <a className="back" href="/">&larr; Retour au site</a>
         </div>
       </header>

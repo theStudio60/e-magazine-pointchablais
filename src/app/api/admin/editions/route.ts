@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
+import { prerenderEdition, clearEditionCache } from "@/lib/pdf-render";
 import { EDITIONS_DIR, COVERS_DIR, editionPdfPath, coverPath } from "@/lib/storage";
 import { requireAdmin, safe } from "@/lib/admin";
 import { addEdition, removeEdition, getSettings, addLog } from "@/lib/db";
@@ -38,6 +39,11 @@ export const POST = safe(async (req: Request) => {
     const err = e as NodeJS.ErrnoException;
     throw new Error(`Enregistrement du fichier impossible (${err.code || err.message}). Vérifiez que les dossiers « storage/editions » et « storage/covers » sont inscriptibles.`);
   }
+
+  // Pré-rendu des pages en arrière-plan : la liseuse sera instantanée.
+  clearEditionCache(ed.id);
+  prerenderEdition(ed.id).catch((e) => console.error("[liseuse] pré-rendu", ed.id, e));
+
   await addLog(admin.email, "Numéro ajouté", `${ed.title} — ${ed.date}${publishAt ? ` (sortie ${publishAt})` : ""}`);
   return NextResponse.json({ ok: true, edition: ed });
 });
@@ -50,6 +56,7 @@ export const DELETE = safe(async (req: Request) => {
   await removeEdition(id);
   await addLog(admin.email, "Numéro supprimé", id);
   try { fs.unlinkSync(editionPdfPath(id)); } catch {}
+  clearEditionCache(id);
   try { fs.unlinkSync(coverPath(id)); } catch {}
   return NextResponse.json({ ok: true });
 });

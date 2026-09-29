@@ -48,7 +48,7 @@ export default async function Abonnement({
 
       <header>
         <div className="wrap head">
-          <img src="/logo.png" alt="Le Point Chablais" />
+          <a href="/" aria-label="Accueil" style={{ display: "flex" }}><img src="/logo.png" alt="Le Point Chablais" /></a>
           <div className="r">
             <a className="out" href="/espace">Mon espace</a>
             <LogoutButton />

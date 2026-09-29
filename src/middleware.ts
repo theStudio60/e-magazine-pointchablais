@@ -20,12 +20,12 @@ export async function middleware(req: NextRequest) {
   if (!ok) {
     const url = req.nextUrl.clone();
     url.pathname = "/connexion";
-    url.searchParams.set("next", "/espace");
+    url.searchParams.set("next", req.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/espace", "/espace/:path*", "/abonnement", "/compte", "/admin", "/admin/:path*"],
+    matcher: ["/espace", "/espace/:path*", "/abonnement", "/lire/:path*", "/compte", "/admin", "/admin/:path*"],
 };

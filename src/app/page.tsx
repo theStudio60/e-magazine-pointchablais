@@ -145,13 +145,19 @@ const HTML = `
   .foot-bottom{border-top:1px solid var(--line);text-align:center;padding:15px 0;font-size:12.5px}
   .foot-bottom a:hover{color:var(--blue)}
   .foot-bottom .sep{color:var(--line);margin:0 4px}
+  @media(max-width:620px){
+    .foot{flex-direction:column;justify-content:center;text-align:center;gap:16px;padding:28px 0 22px}
+    .foot .brand{flex-direction:column;gap:8px}
+    .foot .pays{justify-content:center}
+    .foot-bottom{line-height:1.9;padding:16px 0 20px}
+  }
 
   @media(prefers-reduced-motion:reduce){*{animation:none!important}.stage .mag{transform:rotate(-4deg)}.phone{transform:rotate(5deg)}}
 </style>
 
 <header>
   <div class="wrap head">
-    <img src="/logo.png" alt="Le Point Chablais">
+        <a href="/" aria-label="Accueil" style="display:flex"><img src="/logo.png" alt="Le Point Chablais"></a>
     <a class="login" href="/connexion">Se connecter</a>
   </div>
 </header>
