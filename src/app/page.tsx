@@ -70,7 +70,7 @@ const HTML = `
   @keyframes floatPill{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
   @keyframes pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.6);opacity:0}}
   @media(max-width:880px){.phone{right:-14px;bottom:-24px}.pill{left:-8px}}
-  .wave{display:block;width:100%;height:auto;margin-top:-1px}
+  .wave{display:block;width:100%;height:auto;margin-top:-1px;margin-bottom:-1px}
 
   /* offres */
   .offres{background:var(--gray);padding:74px 0 84px}
