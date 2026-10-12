@@ -20,17 +20,35 @@ input:focus{outline:0;border-color:var(--mauve);box-shadow:0 0 0 4px var(--mauve
 .center{text-align:center;margin-top:16px;font-size:14px}
 `;
 
+// Le lien "mode démo" ne doit JAMAIS apparaître en production :
+// il permettrait de réinitialiser le mot de passe de n'importe quel compte sans accès à sa boîte e-mail.
+const DEMO = process.env.NODE_ENV !== "production";
+
 export default function Forgot() {
   const [email, setEmail] = useState("");
   const [done, setDone] = useState(false);
   const [resetUrl, setResetUrl] = useState<string | null>(null);
+  const [err, setErr] = useState("");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const r = await fetch("/api/account/forgot", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
-    const d = await r.json();
-    setResetUrl(d.resetUrl || null);
-    setDone(true);
+    setErr("");
+    try {
+      const r = await fetch("/api/account/forgot", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
+      const d = await r.json().catch(() => ({}));
+      if (r.status === 404) {
+        setErr("Aucun compte n'existe avec cet e-mail.");
+        return;
+      }
+      if (!r.ok) {
+        setErr(d.error || "Une erreur est survenue, réessayez.");
+        return;
+      }
+      setResetUrl(DEMO ? d.resetUrl || null : null);
+      setDone(true);
+    } catch {
+      setErr("Erreur réseau, réessayez.");
+    }
   }
 
   return (
@@ -42,13 +60,14 @@ export default function Forgot() {
         <p className="l">Entrez votre e-mail pour recevoir un lien de réinitialisation.</p>
         {!done ? (
           <form onSubmit={submit}>
+            {err && <div className="msg err">{err}</div>}
             <label>E-mail</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vous@exemple.ch" required />
             <button className="btn" type="submit">Envoyer le lien</button>
           </form>
         ) : (
           <>
-            <div className="msg ok">Si un compte existe pour cet e-mail, un lien de réinitialisation a été envoyé.</div>
+            <div className="msg ok">Un lien de réinitialisation a été envoyé à votre adresse e-mail. Pensez à vérifier vos courriers indésirables.</div>
             {resetUrl && (
               <div className="msg ok">
                 Mode démo (sans e-mail) : <a href={resetUrl}>cliquez ici pour réinitialiser</a>.

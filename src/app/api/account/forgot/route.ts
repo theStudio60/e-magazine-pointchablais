@@ -9,8 +9,13 @@ export async function POST(req: Request) {
   const { email } = await req.json().catch(() => ({}));
   const user = email ? await getUserByEmail(email) : undefined;
 
-  // On ne révèle jamais si l'e-mail existe (sécurité).
-  if (!user) return NextResponse.json({ ok: true });
+  // Compte introuvable : on le dit clairement à l'utilisateur (la page affiche ce message).
+  if (!user) {
+    return NextResponse.json(
+      { error: "Aucun compte n'existe avec cet e-mail." },
+      { status: 404 }
+    );
+  }
 
   const token = crypto.randomUUID().replace(/-/g, "");
   await updateUser(user.id, { resetToken: token, resetExpires: Date.now() + 3600_000 });
