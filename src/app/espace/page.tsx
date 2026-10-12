@@ -152,11 +152,7 @@ export default async function Espace({
               </a>
               <a className="act-tile" href="/compte">
                 <div className="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" strokeWidth="1.7" /><path d="M8 11V8a4 4 0 018 0v3" stroke="currentColor" strokeWidth="1.7" /></svg></div>
-                <span>Changement de login</span>
-              </a>
-              <a className="act-tile" href="/compte">
-                <div className="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="12" r="4" stroke="currentColor" strokeWidth="1.7" /><path d="M12.5 12H21l-2 2 2 2-3 2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
-                <span>Changement de mot de passe</span>
+                <span>Mes identifiants</span>
               </a>
             </div>
           </div>

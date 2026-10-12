@@ -51,7 +51,7 @@ const HTML = `
   .stage .mag{width:100%;border-radius:6px;display:block;
     box-shadow:0 40px 70px -24px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.08);
     transform:rotate(-4deg);animation:floatCover 7s ease-in-out infinite}
-  /* phone mockup — le magazine dans la poche */
+  /* phone mockup - le magazine dans la poche */
   .phone{position:absolute;right:-38px;bottom:-34px;width:34%;aspect-ratio:9/19;
     background:#0e1418;border-radius:22px;padding:7px;
     box-shadow:0 26px 48px -18px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.12);
@@ -179,7 +179,7 @@ const HTML = `
     <div class="fade">
       <span class="eye">Abonnement numérique</span>
       <h1>Le journal qui réunit <b>Aigle</b>,<br><b>Bex</b> et le Chablais.</h1>
-      <p>Toute votre actualité régionale, désormais en version numérique — à lire dès sa parution, sur tous vos écrans.</p>
+      <p>Toute votre actualité régionale, désormais en version numérique - à lire dès sa parution, sur tous vos écrans.</p>
     </div>
     <div class="cover-side fade" style="animation-delay:.15s">
       <div class="stage">
@@ -197,7 +197,7 @@ const HTML = `
 <section class="offres" id="offres">
   <p class="kick">Nos formules</p>
   <h2>Choisissez votre abonnement</h2>
-  <p class="sub">Le magazine en version numérique, sans engagement. Résiliable à tout moment.</p>
+  <p class="sub">Le journal en version numérique, sans engagement. Résiliable à tout moment.</p>
   <div class="grid">
 
     <div class="card">
@@ -205,10 +205,10 @@ const HTML = `
         <div class="dv-phone"><div class="s"><img src="/mobile.jpg" alt=""></div></div>
       </div>
       <p class="plan">Mensuel</p>
-      <div class="price"><span class="amt">__PRIX_M__</span><span class="cur">CHF / mois</span></div>
+      <div class="price"><span class="amt">__PRIX_M__</span><span class="cur">CHF/mois</span></div>
       <p class="per">Facturé chaque mois</p>
       <ul class="feats">
-        <li><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#e6f0f4"/><path d="M7 12.5l3 3 7-7" fill="none" stroke="#1c6b8c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Le magazine complet en numérique</li>
+        <li><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#e6f0f4"/><path d="M7 12.5l3 3 7-7" fill="none" stroke="#1c6b8c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Le journal complet en numérique</li>
         <li><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#e6f0f4"/><path d="M7 12.5l3 3 7-7" fill="none" stroke="#1c6b8c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Lecture sur tous vos écrans</li>
         <li><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#e6f0f4"/><path d="M7 12.5l3 3 7-7" fill="none" stroke="#1c6b8c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Sans engagement</li>
       </ul>
@@ -223,7 +223,7 @@ const HTML = `
         <span class="plus">+</span>
       </div>
       <p class="plan">Annuel</p>
-      <div class="price"><span class="amt">__PRIX_A__</span><span class="cur">CHF / an</span></div>
+      <div class="price"><span class="amt">__PRIX_A__</span><span class="cur">CHF/an</span></div>
       <p class="per">Soit un peu plus de 4.– par mois</p>
       <ul class="feats">
         <li><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#f2e6ef"/><path d="M7 12.5l3 3 7-7" fill="none" stroke="#9c6b91" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Tout le mensuel, à prix réduit</li>
