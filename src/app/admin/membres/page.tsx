@@ -15,6 +15,15 @@ const cap = (s: string | null) => (s ? s[0].toUpperCase() + s.slice(1) : "—");
 const fmtDT = (iso?: string) =>
   iso ? new Date(iso).toLocaleString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).replace(" à", ",") : "—";
 
+// Pagination : texte foncé pour Précédent/Suivant, texte blanc sur la page active et au survol.
+// (Sélecteurs volontairement plus précis que ceux de la feuille de style de l'admin.)
+const PG_CSS = `
+.tfoot .pg button{color:var(--ink)}
+.tfoot .pg button:disabled{color:var(--muted);opacity:.6;cursor:not-allowed}
+.tfoot .pg button:hover:not(:disabled){background:var(--primary);color:#fff;border-color:var(--primary)}
+.tfoot .pg button.on,.tfoot .pg button.on:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+`;
+
 export default function Membres() {
   const [q, setQ] = useState("");
   const { confirm, confirmDialog } = useConfirm();
@@ -131,6 +140,7 @@ export default function Membres() {
 
   return (
     <>
+      <style dangerouslySetInnerHTML={{ __html: PG_CSS }} />
       <h1 className="t">Gestion des Membres</h1>
       <p className="sub">Gérez et visualisez tous vos membres</p>
 

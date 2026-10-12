@@ -27,6 +27,14 @@ export async function POST(req: Request) {
 
   const sig = req.headers.get("stripe-signature") || "";
   const whsec = process.env.STRIPE_WEBHOOK_SECRET || "";
+
+  // En production, on refuse tout événement non signé (sinon n'importe qui pourrait
+  // appeler cette adresse et activer un abonnement sans payer).
+  if (!whsec && process.env.NODE_ENV === "production") {
+    console.error("[webhook] STRIPE_WEBHOOK_SECRET manquant : événement refusé.");
+    return NextResponse.json({ error: "webhook non configuré" }, { status: 500 });
+  }
+
   const raw = await req.text();
 
   let event: Stripe.Event;
@@ -69,16 +77,24 @@ export async function POST(req: Request) {
         });
         // La facture est créée par l'événement invoice.paid (dédupliquée) ;
         // filet de secours si l'id de facture est déjà dans la session.
+        // Si c'est ici que la facture est créée, invoice.paid ne l'enverra plus :
+        // on envoie donc l'e-mail de confirmation ici dans ce cas.
         const invId = (s as unknown as { invoice?: string }).invoice;
         if (invId) {
           const pack = await getPack(plan);
-          await recordStripeInvoice({
+          const amount = pack?.price ?? s.amount_total ?? 0;
+          const created = await recordStripeInvoice({
             stripeInvoiceId: invId,
             user: u0,
-            amount: pack?.price ?? s.amount_total ?? 0,
+            amount,
             plan,
             status: "paye",
           });
+          if (created) {
+            await addLog(u0.email, "Paiement reçu", `Abonnement ${plan} — facture ${invId}`);
+            const m = mails.paymentReceived(u0.name, plan, amount, end, espace);
+            await sendMail(u0.email, m.subject, m.html);
+          }
         }
         await addLog(u0.email, "Abonnement", `Souscription ${plan} (Stripe)`);
         const a = mails.adminAlert("Nouvel abonné", [
@@ -195,8 +211,10 @@ export async function POST(req: Request) {
         }
       }
     }
-  } catch {
-    // on ignore les erreurs de traitement pour renvoyer 200 à Stripe
+  } catch (err) {
+    // On renvoie quand même 200 à Stripe (sinon il rejoue l'événement en boucle),
+    // mais on garde une trace de l'erreur dans les logs du serveur.
+    console.error(`[webhook] erreur de traitement (${event.type}) :`, err);
   }
 
   return NextResponse.json({ received: true });

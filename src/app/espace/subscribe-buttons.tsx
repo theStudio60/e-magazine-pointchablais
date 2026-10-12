@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function SubscribeButtons({
   prixMensuel = "5",
@@ -10,6 +10,16 @@ export default function SubscribeButtons({
   prixAnnuel?: string;
 }) {
   const [loading, setLoading] = useState<string | null>(null);
+
+  // Quand on revient avec la flèche « Retour » du navigateur, la page est restaurée
+  // depuis le cache (bfcache) avec le bouton encore en chargement : on remet l'état à zéro.
+  useEffect(() => {
+    function onShow(e: PageTransitionEvent) {
+      if (e.persisted) setLoading(null);
+    }
+    window.addEventListener("pageshow", onShow);
+    return () => window.removeEventListener("pageshow", onShow);
+  }, []);
 
   function subscribe(plan: "mensuel" | "annuel") {
     setLoading(plan);

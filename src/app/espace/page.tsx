@@ -146,11 +146,11 @@ export default async function Espace({
               </div>
             </div>
             <div className="actions">
-              <a className="act-tile" href="/compte">
+              <a className="act-tile" href="/compte#demenagement">
                 <div className="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 11l9-8 9 8M5 10v10h14V10" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
                 <span>Déménagement</span>
               </a>
-              <a className="act-tile" href="/compte">
+              <a className="act-tile" href="/compte#identifiants">
                 <div className="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" strokeWidth="1.7" /><path d="M8 11V8a4 4 0 018 0v3" stroke="currentColor" strokeWidth="1.7" /></svg></div>
                 <span>Mes identifiants</span>
               </a>

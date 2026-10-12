@@ -17,13 +17,16 @@ export async function GET(req: Request) {
   if (!(await requireAdmin())) return NextResponse.json({ error: "Interdit" }, { status: 403 });
   const url = new URL(req.url);
   const q = (url.searchParams.get("q") || "").toLowerCase().trim();
-  const role = url.searchParams.get("role"); // "user" | "admin" | null
+  const role = url.searchParams.get("role"); // "admin" pour la page Administrateurs ; sinon : membres uniquement
   const status = url.searchParams.get("status"); // "active" | "inactive" | null
   const page = Math.max(1, Number(url.searchParams.get("page") || 1));
   const size = Math.min(100, Math.max(5, Number(url.searchParams.get("size") || 10)));
 
   const all = await listUsers();
   const members = all.filter((u) => u.role !== "admin");
+  const admins = all.filter((u) => u.role === "admin");
+
+  // Les cartes du haut comptent les membres uniquement.
   const now = new Date();
   const stats = {
     total: members.length,
@@ -33,8 +36,9 @@ export async function GET(req: Request) {
   };
   const sort = url.searchParams.get("sort"); // "recent" (défaut) | "ancien" | "nom"
 
-  let rows = all;
-  if (role) rows = rows.filter((u) => u.role === role);
+  // Le tableau part de la même base que les cartes : les admins n'y figurent plus,
+  // sauf si la page Administrateurs les demande explicitement (role=admin).
+  let rows = role === "admin" ? admins : members;
   if (status) rows = rows.filter((u) => u.status === status);
   if (q) rows = rows.filter((u) => (u.name + " " + u.email + " " + u.subscriberNo).toLowerCase().includes(q));
   rows = rows.sort(
