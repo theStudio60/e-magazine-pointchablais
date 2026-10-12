@@ -21,12 +21,16 @@ export default function Inscription() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErr("");
+    if (!name.trim()) {
+      setErr("Veuillez indiquer votre nom.");
+      return;
+    }
     setLoading(true);
     try {
       const r = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name: name.trim(), email, password }),
       });
       const d = await r.json();
       if (!r.ok) {
@@ -65,7 +69,7 @@ export default function Inscription() {
             <h1>Rejoignez <b>Le Point Chablais.</b></h1>
             <p>Créez votre compte, puis choisissez votre abonnement numérique.</p>
             <ul className="perks">
-              <li><Check />Le magazine complet en numérique</li>
+              <li><Check />Le journal complet en numérique</li>
               <li><Check />Sur tous vos écrans, dès la parution</li>
               <li><Check />Sans engagement, résiliable à tout moment</li>
             </ul>
@@ -85,7 +89,7 @@ export default function Inscription() {
                 <label htmlFor="name">Nom</label>
                 <div className="inp">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" /><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-                  <input id="name" type="text" placeholder="Votre nom" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
+                  <input id="name" type="text" placeholder="Votre nom" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required />
                 </div>
               </div>
               <div className="field">

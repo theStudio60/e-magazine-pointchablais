@@ -7,7 +7,7 @@ const HTML = `
   :root{
     --blue:#1c6b8c;--blue-deep:#124f68;--blue-ink:#0e3f53;
     --mauve:#9c6b91;--mauve-deep:#7d5074;--mauve-soft:#f4ecf2;
-    --ink:#243138;--muted:#6a7d83;--gray:#f4f6f6;--card:#fff;--line:#e5e9ea;
+    --ink:#243138;--muted:#6a7d83;--gray:#e9eef0;--card:#fff;--line:#e5e9ea;
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
@@ -28,8 +28,10 @@ const HTML = `
   header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
   .head{display:flex;align-items:center;justify-content:space-between;padding-block:15px}
   .head img{height:42px}
-  .head a.login{color:var(--blue-ink);font-weight:600;font-size:14.5px}
-  .head a.login:hover{color:var(--mauve)}
+  .head .btn-login{background:linear-gradient(135deg,var(--blue) 0%,var(--blue-ink) 100%);color:#fff;border-radius:999px;
+    padding:11px 24px 11px 18px;font-size:14.5px;box-shadow:0 10px 22px -10px rgba(14,63,83,.75)}
+  .head .btn-login svg{flex:0 0 auto}
+  .head .btn-login:hover{box-shadow:0 16px 28px -10px rgba(14,63,83,.85)}
 
   /* hero */
   .hero{position:relative;overflow:hidden;background:
@@ -51,7 +53,7 @@ const HTML = `
   .stage .mag{width:100%;border-radius:6px;display:block;
     box-shadow:0 40px 70px -24px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.08);
     transform:rotate(-4deg);animation:floatCover 7s ease-in-out infinite}
-  /* phone mockup - le magazine dans la poche */
+  /* phone mockup — le magazine dans la poche */
   .phone{position:absolute;right:-38px;bottom:-34px;width:34%;aspect-ratio:9/19;
     background:#0e1418;border-radius:22px;padding:7px;
     box-shadow:0 26px 48px -18px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.12);
@@ -81,7 +83,8 @@ const HTML = `
   @media(max-width:680px){.grid{grid-template-columns:1fr;max-width:420px}}
 
   .card{background:var(--card);border-radius:18px;padding:36px 32px 34px;position:relative;
-    border:1px solid var(--line);display:flex;flex-direction:column;
+    border:1px solid #d3dce0;box-shadow:0 12px 30px -14px rgba(14,63,83,.28),0 2px 8px rgba(14,63,83,.08);
+    display:flex;flex-direction:column;
     transition:transform .28s cubic-bezier(.2,.7,.2,1),box-shadow .28s,border-color .28s}
   .card:hover{transform:translateY(-10px);box-shadow:0 30px 55px -28px rgba(14,63,83,.4);border-color:transparent}
   .card .plan{font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 14px}
@@ -158,7 +161,7 @@ const HTML = `
 <header>
   <div class="wrap head">
         <a href="/" aria-label="Accueil" style="display:flex"><img src="/logo.png" alt="Le Point Chablais"></a>
-    <a class="login" href="/connexion">Se connecter</a>
+    <a class="btn btn-login" href="/connexion"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Se connecter</a>
   </div>
 </header>
 
@@ -179,7 +182,7 @@ const HTML = `
     <div class="fade">
       <span class="eye">Abonnement numérique</span>
       <h1>Le journal qui réunit <b>Aigle</b>,<br><b>Bex</b> et le Chablais.</h1>
-      <p>Toute votre actualité régionale, désormais en version numérique - à lire dès sa parution, sur tous vos écrans.</p>
+      <p>Toute votre actualité régionale, désormais en version numérique — à lire dès sa parution, sur tous vos écrans.</p>
     </div>
     <div class="cover-side fade" style="animation-delay:.15s">
       <div class="stage">
@@ -190,7 +193,7 @@ const HTML = `
     </div>
   </div>
   <svg class="wave" viewBox="0 0 1440 70" preserveAspectRatio="none" aria-hidden="true">
-    <path fill="#f4f6f6" d="M0,40 C240,72 480,72 720,48 C960,24 1200,24 1440,44 L1440,70 L0,70 Z"></path>
+    <path fill="#e9eef0" d="M0,40 C240,72 480,72 720,48 C960,24 1200,24 1440,44 L1440,70 L0,70 Z"></path>
   </svg>
 </section>
 
