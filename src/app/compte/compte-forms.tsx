@@ -20,7 +20,8 @@ h1{color:var(--blue-ink);font-size:24px;margin:28px 0 18px}
 label{display:block;font-size:13px;font-weight:600;margin:0 0 5px}
 input{width:100%;font-family:inherit;font-size:15px;padding:12px 13px;border:1.5px solid var(--line);border-radius:8px;margin-bottom:14px}
 input:focus{outline:0;border-color:var(--mauve);box-shadow:0 0 0 4px var(--mauve-soft)}
-.btn{background:var(--blue);color:#fff;border:0;border-radius:7px;padding:12px 20px;font-weight:600;font-family:inherit;cursor:pointer}
+.btn{background:var(--blue);color:#fff;border:0;border-radius:7px;padding:14px 22px;font-size:16px;line-height:1.3;font-weight:600;font-family:inherit;cursor:pointer}
+@media(max-width:620px){.btn{font-size:17px;padding:15px 22px;width:100%}}
 .btn:hover{background:var(--blue-deep)}
 .msg{padding:10px 12px;border-radius:8px;font-size:13.5px;margin-bottom:14px}
 .msg.ok{background:#e5f4ec;color:#1f7a4d}.msg.err{background:#fdeceb;color:#b3261e}

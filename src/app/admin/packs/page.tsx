@@ -11,6 +11,31 @@ type Pack = { key: string; name: string; interval: "month" | "year"; price: numb
 const slug = (s: string) =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "pack";
 
+// Tableau : champ « Nom » large sur ordinateur ; sur mobile, chaque pack devient une carte.
+const PACKS_CSS = `
+.pk-wrap{overflow-x:auto}
+.pk{width:100%}
+.pk td.name{width:36%}
+.pk td.name input{width:100%;min-width:220px}
+.pk td.price input{width:110px}
+@media(max-width:820px){
+  .pk thead{display:none}
+  .pk,.pk tbody,.pk tr,.pk td{display:block;width:100%}
+  .pk tr{border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:12px;background:#fff}
+  .pk td{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:7px 0;border:0}
+  .pk td::before{content:attr(data-label);flex:0 0 100px;font-weight:600;font-size:12.5px;color:var(--muted)}
+  .pk td.name{width:100%}
+  .pk td.name input{flex:1;min-width:0;width:100%}
+  .pk td.price input{flex:1;min-width:0;width:100%}
+  .pk td.act .btn{width:100%;justify-content:center}
+  .pk td.act::before{display:none}
+  .pk-save .btn{width:100%}
+}
+@media(max-width:620px){
+  .pk-form .grid2{grid-template-columns:1fr}
+}
+`;
+
 export default function Packs() {
   const [packs, setPacks] = useState<Pack[]>([]);
   const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null);
@@ -73,6 +98,7 @@ export default function Packs() {
 
   return (
     <>
+      <style dangerouslySetInnerHTML={{ __html: PACKS_CSS }} />
       <h1 className="t">Packs / Offres</h1>
       <p className="sub">Gérez les formules d&apos;abonnement (nom, prix, disponibilité).</p>
       {msg && <div className={"msg " + (msg.ok ? "ok" : "err")}>{msg.t}</div>}
@@ -82,7 +108,7 @@ export default function Packs() {
       </div>
 
       {showNew && (
-        <div className="card">
+        <div className="card pk-form">
           <h2>Nouveau pack</h2>
           <form onSubmit={addPack}>
             <div className="grid2">
@@ -101,24 +127,26 @@ export default function Packs() {
       )}
 
       <div className="card">
-        <table>
-          <thead><tr><th>Clé</th><th>Nom</th><th>Période</th><th>Prix (CHF)</th><th>Actif</th><th>Recommandé</th><th>Action</th></tr></thead>
-          <tbody>
-            {packs.map((p, i) => (
-              <tr key={p.key}>
-                <td><code>{p.key}</code></td>
-                <td><input type="text" value={p.name} onChange={(e) => upd(i, { name: e.target.value })} /></td>
-                <td>{p.interval === "year" ? "annuel" : "mensuel"}</td>
-                <td style={{ maxWidth: 120 }}><input type="number" min="0" step="0.5" value={p.price / 100} onChange={(e) => upd(i, { price: Math.round(Number(e.target.value) * 100) })} /></td>
-                <td><input type="checkbox" checked={p.active} onChange={(e) => upd(i, { active: e.target.checked })} /></td>
-                <td><input type="checkbox" checked={!!p.recommended} onChange={(e) => setRecommended(i, e.target.checked)} /></td>
-                <td><button className="btn btn-d" type="button" onClick={() => removePack(i)}><Icon name="trash" size={16} /> Supprimer</button></td>
-              </tr>
-            ))}
-            {packs.length === 0 && <tr><td colSpan={7} style={{ color: "var(--muted)" }}>Aucun pack.</td></tr>}
-          </tbody>
-        </table>
-        <div style={{ marginTop: 16 }}><button className="btn btn-b" onClick={save}>Enregistrer les packs</button></div>
+        <div className="pk-wrap">
+          <table className="pk">
+            <thead><tr><th>Clé</th><th>Nom</th><th>Période</th><th>Prix (CHF)</th><th>Actif</th><th>Recommandé</th><th>Action</th></tr></thead>
+            <tbody>
+              {packs.map((p, i) => (
+                <tr key={p.key}>
+                  <td data-label="Clé"><code>{p.key}</code></td>
+                  <td className="name" data-label="Nom"><input type="text" value={p.name} onChange={(e) => upd(i, { name: e.target.value })} /></td>
+                  <td data-label="Période">{p.interval === "year" ? "annuel" : "mensuel"}</td>
+                  <td className="price" data-label="Prix (CHF)"><input type="number" min="0" step="0.5" value={p.price / 100} onChange={(e) => upd(i, { price: Math.round(Number(e.target.value) * 100) })} /></td>
+                  <td data-label="Actif"><input type="checkbox" checked={p.active} onChange={(e) => upd(i, { active: e.target.checked })} /></td>
+                  <td data-label="Recommandé"><input type="checkbox" checked={!!p.recommended} onChange={(e) => setRecommended(i, e.target.checked)} /></td>
+                  <td className="act"><button className="btn btn-d" type="button" onClick={() => removePack(i)}><Icon name="trash" size={16} /> Supprimer</button></td>
+                </tr>
+              ))}
+              {packs.length === 0 && <tr><td colSpan={7} style={{ color: "var(--muted)" }}>Aucun pack.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        <div className="pk-save" style={{ marginTop: 16 }}><button className="btn btn-b" onClick={save}>Enregistrer les packs</button></div>
       </div>
       {confirmDialog}
     </>

@@ -24,6 +24,25 @@ const OTHERS: Item[] = [
   { href: "/admin/parametres", label: "Paramètres", icon: "settings" },
 ];
 
+// Correctif mobile (Safari iPhone) : le menu de gauche utilise la hauteur « visible » (dvh) au lieu de 100vh,
+// peut défiler, et garde une marge en bas pour que « Déconnexion » reste accessible au-dessus de la barre Safari.
+const MOBILE_FIX_CSS = `
+@media(max-width:900px){
+  .admin .side{
+    height:100vh !important;
+    height:100dvh !important;
+    max-height:100dvh;
+    overflow-y:auto !important;
+    overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+    padding-bottom:calc(28px + env(safe-area-inset-bottom, 0px));
+  }
+  .admin .side > *{flex-shrink:0}
+  .admin .side .logout{margin-bottom:8px}
+}
+`;
+
 export default function AdminShell({ adminName, children }: { adminName: string; children: ReactNode }) {
   const path = usePathname();
   const [q, setQ] = useState("");
@@ -47,7 +66,7 @@ export default function AdminShell({ adminName, children }: { adminName: string;
 
   return (
     <div className={"admin" + (collapsed ? " col" : "") + (open ? " open" : "")}>
-      <style dangerouslySetInnerHTML={{ __html: ADMIN_CSS }} />
+      <style dangerouslySetInnerHTML={{ __html: ADMIN_CSS + MOBILE_FIX_CSS }} />
       <div className="scrim" onClick={() => setOpen(false)} />
       <aside className="side">
         <div className="brand">

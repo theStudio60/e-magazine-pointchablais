@@ -10,12 +10,14 @@ export const runtime = "nodejs";
 
 const CSS = `
   .recap{max-width:560px;margin:0 auto}
-  .recap .line{display:flex;justify-content:space-between;gap:16px;padding:14px 0;border-top:1px solid var(--line);font-size:15px}
+  /* deux colonnes : libellés à largeur fixe, valeurs alignées sur la même marge gauche */
+  .recap .line{display:grid;grid-template-columns:120px 1fr;column-gap:16px;align-items:baseline;padding:14px 0;border-top:1px solid var(--line);font-size:15px}
   .recap .line:first-of-type{border-top:0}
   .recap .k{color:var(--muted)}
-  .recap .v{font-weight:600;color:var(--ink)}
+  .recap .v{font-weight:600;color:var(--ink);text-align:left;min-width:0;overflow-wrap:anywhere}
   .recap .total{font-size:20px;color:var(--blue-ink)}
   .recap .note{color:var(--muted);font-size:13px;margin:6px 0 0}
+  @media(max-width:420px){.recap .line{grid-template-columns:96px 1fr;column-gap:12px}}
   .cgv{display:flex;gap:10px;align-items:flex-start;margin:22px 0 6px;font-size:14px;color:var(--ink)}
   .cgv input{margin-top:3px;width:17px;height:17px;accent-color:var(--blue)}
   .cgv a{color:var(--blue);text-decoration:underline}
