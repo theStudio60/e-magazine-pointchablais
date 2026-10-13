@@ -14,8 +14,10 @@ export default function Inscription() {
   const [plan, setPlan] = useState("");
 
   useEffect(() => {
+    // Clé du pack choisi sur la page d'accueil (ex. « mensuel », « annuel », « semestriel »).
+    // Seuls lettres, chiffres et tirets sont acceptés ; le serveur vérifie ensuite que le pack existe.
     const p = new URLSearchParams(window.location.search).get("plan");
-    if (p === "mensuel" || p === "annuel") setPlan(p);
+    if (p && /^[a-z0-9-]{1,64}$/i.test(p)) setPlan(p);
   }, []);
 
   async function onSubmit(e: React.FormEvent) {
@@ -38,7 +40,7 @@ export default function Inscription() {
         setLoading(false);
         return;
       }
-    window.location.href = plan ? `/abonnement?plan=${plan}` : "/espace";
+      window.location.href = plan ? `/abonnement?plan=${encodeURIComponent(plan)}` : "/espace";
     } catch {
       setErr("Erreur réseau, réessayez.");
       setLoading(false);

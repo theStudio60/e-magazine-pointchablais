@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 const EXTRA_CSS = `
   .paid-ok{display:flex;gap:14px;align-items:flex-start;background:#e9f7ef;border:1px solid #b7e3c6;color:#14663a;border-radius:14px;padding:16px 18px;margin:0 0 26px;font-size:14.5px;line-height:1.5}
   .paid-ok .ico{flex:0 0 26px;width:26px;height:26px;border-radius:50%;background:#1f9d55;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700}
-  .offers{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:560px}
+  .offers{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px;max-width:760px}
   @media(max-width:560px){.offers{grid-template-columns:1fr}}
   .offer{position:relative;border:1px solid var(--line);border-radius:14px;padding:22px 20px;text-align:center;background:#fbfcfc}
   .offer.feat{border:1.5px solid var(--mauve)}
@@ -72,7 +72,7 @@ export default async function Espace({
           sub.items?.data?.[0]?.current_period_end ??
           (sub as unknown as { current_period_end?: number }).current_period_end ??
           null;
-        const plan = (sub.metadata?.plan as "mensuel" | "annuel") || user.plan || "annuel";
+        const plan = (sub.metadata?.plan as string) || user.plan || "annuel";
         await updateUser(user.id, {
           status: "active",
           plan,
@@ -98,8 +98,12 @@ export default async function Espace({
   const active = user.status === "active";
   const settings = await getSettings();
   const editions = settings.editions;
-  const prixMensuel = String(Math.round((settings.packs.find((p) => p.key === "mensuel")?.price ?? 500) / 100));
-  const prixAnnuel = String(Math.round((settings.packs.find((p) => p.key === "annuel")?.price ?? 4900) / 100));
+  // Formules proposées : uniquement les packs « Actifs » de l'administration.
+  const offers = settings.packs
+    .filter((p) => p.active)
+    .map(({ key, name, interval, price, recommended }) => ({ key, name, interval, price, recommended }));
+  // Nom du pack de l'abonné (ex. « mensuel », « semestriel »).
+  const planName = (settings.packs.find((p) => p.key === user.plan)?.name || user.plan || "").toLowerCase();
 
   return (
     <main>
@@ -163,7 +167,7 @@ export default async function Espace({
           {active ? (
             <div className="panel">
               <p className="subtype">
-                Abonnement {user.plan === "mensuel" ? "mensuel" : "annuel"} (numérique)
+                Abonnement {planName} (numérique)
                 <span className="chip"><span className="dot"></span>Actif</span>
               </p>
               <div className="subrow"><span className="k">Date de fin d&apos;abonnement</span><span className="v">{fmt(user.currentPeriodEnd)}</span></div>
@@ -176,7 +180,7 @@ export default async function Espace({
               <p style={{ color: "var(--muted)", fontSize: 14.5, margin: "0 0 20px" }}>
                 Choisissez une formule pour accéder à toutes les éditions numériques.
               </p>
-              <SubscribeButtons prixMensuel={prixMensuel} prixAnnuel={prixAnnuel} />
+              <SubscribeButtons packs={offers} />
             </div>
           )}
 

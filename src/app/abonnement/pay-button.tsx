@@ -1,11 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function PayButton({ plan }: { plan: string }) {
   const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+
+  // Retour avec la flèche du navigateur depuis Stripe : la page est restaurée depuis le cache
+  // avec le bouton encore sur « Redirection… ». On remet l'état à zéro.
+  useEffect(() => {
+    function onShow(e: PageTransitionEvent) {
+      if (e.persisted) setLoading(false);
+    }
+    window.addEventListener("pageshow", onShow);
+    return () => window.removeEventListener("pageshow", onShow);
+  }, []);
 
   async function pay() {
     if (!agree || loading) return;

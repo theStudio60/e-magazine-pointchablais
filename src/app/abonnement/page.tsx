@@ -35,8 +35,12 @@ export default async function Abonnement({
   if (user.status === "active") redirect("/espace");
 
   const settings = await getSettings();
-  const key = sp?.plan === "mensuel" ? "mensuel" : "annuel";
-  const pack = settings.packs.find((p) => p.key === key && p.active) || settings.packs.find((p) => p.active);
+  const key = sp?.plan || "";
+  // Pack demandé s'il est actif ; sinon le pack recommandé, sinon le premier pack actif.
+  const pack =
+    settings.packs.find((p) => p.key === key && p.active) ||
+    settings.packs.find((p) => p.active && p.recommended) ||
+    settings.packs.find((p) => p.active);
   if (!pack) redirect("/espace");
 
   const prix = (pack.price / 100).toFixed(2);

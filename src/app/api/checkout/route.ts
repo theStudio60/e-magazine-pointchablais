@@ -1,11 +1,21 @@
 import { NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/auth";
 import { getUserById, updateUser, getPack, createInvoice, addLog } from "@/lib/db";
-import { sendMail, mails } from "@/lib/mailer";
+import { sendMail, mails, appUrl } from "@/lib/mailer";
 import { stripe, stripeEnabled } from "@/lib/stripe";
 import type Stripe from "stripe";
 
 export const runtime = "nodejs";
+
+// Adresse publique du site, utilisée pour le retour depuis Stripe.
+// 1) la variable APP_URL (à définir en production), 2) sinon l'adresse réelle vue par le navigateur
+// (en-têtes du proxy de l'hébergeur), 3) en dernier recours l'adresse de la requête.
+function siteOrigin(req: Request): string {
+  const h = req.headers;
+  const host = h.get("x-forwarded-host") || h.get("host");
+  const proto = h.get("x-forwarded-proto") || (host && /^(localhost|127\.)/.test(host) ? "http" : "https");
+  return host ? `${proto}://${host}` : new URL(req.url).origin;
+}
 
 export async function POST(req: Request) {
   const uid = await getSessionUserId();
@@ -14,10 +24,11 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: "Utilisateur introuvable." }, { status: 404 });
 
   const body = await req.json().catch(() => ({}));
-  const key: string = body?.plan === "mensuel" ? "mensuel" : "annuel";
+  // Le pack est lu dans la base : n'importe quelle clé de pack actif est acceptée.
+  const key: string = typeof body?.plan === "string" && body.plan ? body.plan : "annuel";
   const pack = await getPack(key);
   if (!pack || !pack.active) return NextResponse.json({ error: "Offre indisponible." }, { status: 400 });
-  const origin = new URL(req.url).origin;
+  const origin = appUrl(siteOrigin(req));
 
   if (stripeEnabled && stripe) {
     let customerId = user.stripeCustomerId;

@@ -1,27 +1,74 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { call, postJson } from "@/lib/admin-fetch";
+import { postJson } from "@/lib/admin-fetch";
+import { Icon } from "../icons";
+import { useConfirm } from "../confirm";
 
 type Pack = { key: string; name: string; interval: "month" | "year"; price: number; active: boolean; recommended?: boolean };
+
+// « Offre Famille » -> « offre-famille » (sans accents ni caractères spéciaux)
+const slug = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "pack";
 
 export default function Packs() {
   const [packs, setPacks] = useState<Pack[]>([]);
   const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null);
+  const [showNew, setShowNew] = useState(false);
+  const [nName, setNName] = useState("");
+  const [nInterval, setNInterval] = useState<"month" | "year">("month");
+  const [nPrice, setNPrice] = useState("");
+  const { confirm, confirmDialog } = useConfirm();
 
   useEffect(() => {
     fetch("/api/admin/settings").then((r) => r.json()).then((d) => setPacks(d.settings.packs)).catch(() => {});
   }, []);
 
+  function flash(t: string, ok = true) { setMsg({ t, ok }); setTimeout(() => setMsg(null), 4500); }
+
   function upd(i: number, patch: Partial<Pack>) {
     setPacks((ps) => ps.map((p, idx) => (idx === i ? { ...p, ...patch } : p)));
   }
+  // Un seul pack « Recommandé » à la fois.
+  function setRecommended(i: number, on: boolean) {
+    setPacks((ps) => ps.map((p, idx) => (idx === i ? { ...p, recommended: on } : on ? { ...p, recommended: false } : p)));
+  }
+
+  function addPack(e: React.FormEvent) {
+    e.preventDefault();
+    const name = nName.trim();
+    const price = Number(nPrice.replace(",", "."));
+    if (!name) return flash("Donnez un nom au pack.", false);
+    if (!Number.isFinite(price) || price < 0) return flash("Prix invalide.", false);
+    let key = slug(name);
+    const taken = new Set(packs.map((p) => p.key));
+    for (let n = 2; taken.has(key); n++) key = `${slug(name)}-${n}`;
+    setPacks((ps) => [...ps, { key, name, interval: nInterval, price: Math.round(price * 100), active: true, recommended: false }]);
+    setNName(""); setNPrice(""); setNInterval("month"); setShowNew(false);
+    flash("Pack ajouté : cliquez sur « Enregistrer les packs » pour confirmer.");
+  }
+
+  async function removePack(i: number) {
+    const p = packs[i];
+    if (packs.length <= 1) return flash("Il faut garder au moins un pack.", false);
+    const ok = await confirm({
+      title: "Supprimer ce pack ?",
+      message: <>Le pack <b>{p.name}</b> sera retiré de la page d&apos;accueil et du paiement au prochain enregistrement. Pour seulement le masquer, décochez plutôt « Actif ».</>,
+      confirmLabel: "Supprimer",
+      danger: true,
+    });
+    if (!ok) return;
+    setPacks((ps) => ps.filter((_, idx) => idx !== i));
+    flash("Pack retiré : cliquez sur « Enregistrer les packs » pour confirmer.");
+  }
+
   async function save() {
+    if (packs.some((p) => !p.name.trim())) return flash("Chaque pack doit avoir un nom.", false);
     // les prix sont en CHF dans le formulaire → l'API convertit en centimes
-    const body = { packs: packs.map((p) => ({ ...p, price: p.price / 100 })) };
+    const body = { packs: packs.map((p) => ({ ...p, name: p.name.trim(), price: p.price / 100 })) };
     const r = await postJson("/api/admin/settings", body);
-    if (r.ok) { setMsg({ t: "Packs enregistrés (répercutés sur la page d'accueil et le paiement).", ok: true }); setTimeout(() => setMsg(null), 4000); }
-    else setMsg({ t: r.error, ok: false });
+    if (r.ok) flash("Packs enregistrés (répercutés sur la page d'accueil et le paiement).");
+    else flash(r.error, false);
   }
 
   return (
@@ -29,9 +76,33 @@ export default function Packs() {
       <h1 className="t">Packs / Offres</h1>
       <p className="sub">Gérez les formules d&apos;abonnement (nom, prix, disponibilité).</p>
       {msg && <div className={"msg " + (msg.ok ? "ok" : "err")}>{msg.t}</div>}
+
+      <div className="tools">
+        <button className="btn btn-o" onClick={() => setShowNew((v) => !v)}><Icon name="plus" size={17} /> Ajouter un pack</button>
+      </div>
+
+      {showNew && (
+        <div className="card">
+          <h2>Nouveau pack</h2>
+          <form onSubmit={addPack}>
+            <div className="grid2">
+              <div className="field"><label>Nom *</label><input type="text" value={nName} onChange={(e) => setNName(e.target.value)} placeholder="ex. Semestriel" /></div>
+              <div className="field"><label>Période</label>
+                <select value={nInterval} onChange={(e) => setNInterval(e.target.value as "month" | "year")}>
+                  <option value="month">Mensuel</option>
+                  <option value="year">Annuel</option>
+                </select>
+              </div>
+              <div className="field"><label>Prix (CHF) *</label><input type="number" min="0" step="0.5" value={nPrice} onChange={(e) => setNPrice(e.target.value)} /></div>
+            </div>
+            <button className="btn btn-b" type="submit">Ajouter</button>
+          </form>
+        </div>
+      )}
+
       <div className="card">
         <table>
-          <thead><tr><th>Clé</th><th>Nom</th><th>Période</th><th>Prix (CHF)</th><th>Actif</th><th>Recommandé</th></tr></thead>
+          <thead><tr><th>Clé</th><th>Nom</th><th>Période</th><th>Prix (CHF)</th><th>Actif</th><th>Recommandé</th><th>Action</th></tr></thead>
           <tbody>
             {packs.map((p, i) => (
               <tr key={p.key}>
@@ -40,13 +111,16 @@ export default function Packs() {
                 <td>{p.interval === "year" ? "annuel" : "mensuel"}</td>
                 <td style={{ maxWidth: 120 }}><input type="number" min="0" step="0.5" value={p.price / 100} onChange={(e) => upd(i, { price: Math.round(Number(e.target.value) * 100) })} /></td>
                 <td><input type="checkbox" checked={p.active} onChange={(e) => upd(i, { active: e.target.checked })} /></td>
-                <td><input type="checkbox" checked={!!p.recommended} onChange={(e) => upd(i, { recommended: e.target.checked })} /></td>
+                <td><input type="checkbox" checked={!!p.recommended} onChange={(e) => setRecommended(i, e.target.checked)} /></td>
+                <td><button className="btn btn-d" type="button" onClick={() => removePack(i)}><Icon name="trash" size={16} /> Supprimer</button></td>
               </tr>
             ))}
+            {packs.length === 0 && <tr><td colSpan={7} style={{ color: "var(--muted)" }}>Aucun pack.</td></tr>}
           </tbody>
         </table>
         <div style={{ marginTop: 16 }}><button className="btn btn-b" onClick={save}>Enregistrer les packs</button></div>
       </div>
+      {confirmDialog}
     </>
   );
 }

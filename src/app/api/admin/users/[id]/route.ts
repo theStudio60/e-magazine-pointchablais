@@ -11,6 +11,10 @@ export const PATCH = safe(async (req: Request, ctx: { params: Promise<{ id: stri
   const target = await getUserById(id);
   if (!target) return NextResponse.json({ error: "Introuvable" }, { status: 404 });
   const body = await req.json().catch(() => ({}));
+  // Un admin ne peut pas se retirer lui-même les droits (pour ne pas se bloquer hors du back-office).
+  if (id === admin.id && body.role === "user") {
+    return NextResponse.json({ error: "Vous ne pouvez pas retirer vos propres droits d'administrateur." }, { status: 400 });
+  }
   const patch: Record<string, unknown> = {};
   if (body.status === "active" || body.status === "inactive") patch.status = body.status;
   if (body.plan === "mensuel" || body.plan === "annuel" || body.plan === null) patch.plan = body.plan;

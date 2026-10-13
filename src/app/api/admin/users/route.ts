@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, safe } from "@/lib/admin";
-import { listUsers, createUser, getUserByEmail, addLog, getPack, createInvoice, type User } from "@/lib/db";
+import { listUsers, createUser, getUserByEmail, updateUser, addLog, getPack, createInvoice, type User } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
+import { smtpEnabled, sendMail, appUrl } from "@/lib/mailer";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
@@ -13,8 +14,12 @@ function pub(u: User) {
   };
 }
 
+const esc = (s: string) =>
+  s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+
 export async function GET(req: Request) {
-  if (!(await requireAdmin())) return NextResponse.json({ error: "Interdit" }, { status: 403 });
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "Interdit" }, { status: 403 });
   const url = new URL(req.url);
   const q = (url.searchParams.get("q") || "").toLowerCase().trim();
   const role = url.searchParams.get("role"); // "admin" pour la page Administrateurs ; sinon : membres uniquement
@@ -49,7 +54,8 @@ export async function GET(req: Request) {
   const total = rows.length;
   const start = (page - 1) * size;
   const items = rows.slice(start, start + size).map(pub);
-  return NextResponse.json({ items, total, page, size, pages: Math.max(1, Math.ceil(total / size)), stats });
+  // "me" : identifiant de l'admin connecté (la page Administrateurs désactive son propre bouton « Retirer admin »).
+  return NextResponse.json({ items, total, page, size, pages: Math.max(1, Math.ceil(total / size)), stats, me: admin.id });
 }
 
 export const POST = safe(async (req: Request) => {
@@ -74,6 +80,24 @@ export const POST = safe(async (req: Request) => {
     const pack = await getPack(u.plan);
     await createInvoice(u, pack?.price ?? 0, u.plan, "paye");
   }
-  await addLog(admin.email, "Membre créé", `${u.email}${isActive ? " (actif)" : ""}`);
-  return NextResponse.json({ ok: true, id: u.id, tempPassword });
+
+  // Nouvel administrateur : on lui envoie un e-mail pour choisir lui-même son mot de passe
+  // (même page /reinitialiser que « Mot de passe oublié »). Lien valable 48 h.
+  let emailSent = false;
+  if (u.role === "admin" && smtpEnabled) {
+    const token = crypto.randomUUID().replace(/-/g, "");
+    await updateUser(u.id, { resetToken: token, resetExpires: Date.now() + 48 * 3600_000 });
+    const resetUrl = `${appUrl(new URL(req.url).origin)}/reinitialiser?token=${token}`;
+    const html =
+      `<p>Bonjour${u.name ? " " + esc(u.name) : ""},</p>` +
+      `<p>Un accès administrateur au back-office du Point Chablais vient d'être créé pour vous (${esc(u.email)}).</p>` +
+      `<p><a href="${resetUrl}">Choisir mon mot de passe</a></p>` +
+      `<p>Ce lien est valable 48 heures. Si vous n'attendiez pas ce message, ignorez-le.</p>` +
+      `<p>Le Point Chablais</p>`;
+    emailSent = !!(await sendMail(u.email, "Votre accès administrateur – Le Point Chablais", html));
+  }
+
+  await addLog(admin.email, "Membre créé", `${u.email}${isActive ? " (actif)" : ""}${u.role === "admin" ? (emailSent ? " (admin, e-mail envoyé)" : " (admin)") : ""}`);
+  // Le mot de passe temporaire n'est renvoyé que si l'e-mail n'a pas pu partir (ou pour un membre).
+  return NextResponse.json({ ok: true, id: u.id, emailSent, ...(emailSent ? {} : { tempPassword }) });
 });

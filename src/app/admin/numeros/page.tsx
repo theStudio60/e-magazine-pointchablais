@@ -1,10 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { call } from "@/lib/admin-fetch";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { call, postJson } from "@/lib/admin-fetch";
 import { useConfirm } from "../confirm";
+import { Icon } from "../icons";
 
 type Ed = { id: string; date: string; title: string; publishAt?: string | null };
+
+// Recherche sans tenir compte des majuscules ni des accents (« fevrier » trouve « Février »).
+const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 export default function Numeros() {
   const [eds, setEds] = useState<Ed[]>([]);
@@ -12,12 +16,28 @@ export default function Numeros() {
   const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const sending = useRef(false); // verrou synchrone anti-doublon
+  const [q, setQ] = useState("");
+
+  // Modification d'un numéro existant
+  const [editing, setEditing] = useState<Ed | null>(null);
+  const [eDate, setEDate] = useState("");
+  const [eTitle, setETitle] = useState("");
+  const [ePublish, setEPublish] = useState("");
+  const [saving, setSaving] = useState(false);
+  const editRef = useRef<HTMLDivElement>(null);
+
   const load = useCallback(async () => {
     const r = await fetch("/api/admin/editions");
     if (r.ok) setEds((await r.json()).editions);
   }, []);
   useEffect(() => { load(); }, [load]);
   function flash(t: string, ok = true) { setMsg({ t, ok }); setTimeout(() => setMsg(null), 4000); }
+
+  const shown = useMemo(() => {
+    const needle = norm(q.trim());
+    if (!needle) return eds;
+    return eds.filter((e) => norm(`${e.title} ${e.date} ${e.publishAt || ""}`).includes(needle));
+  }, [eds, q]);
 
   async function add(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -33,6 +53,33 @@ export default function Numeros() {
     if (r.ok) { flash("Numéro ajouté."); form.reset(); load(); }
     else flash(r.error, false);
   }
+
+  function startEdit(ed: Ed) {
+    setEditing(ed);
+    setEDate(ed.date);
+    setETitle(ed.title);
+    setEPublish((ed.publishAt || "").slice(0, 10));
+  }
+  // Fait défiler la page jusqu'au formulaire de modification quand on l'ouvre.
+  useEffect(() => {
+    if (editing) editRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [editing]);
+
+  async function saveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editing || saving) return;
+    if (!eDate.trim()) return flash("Indiquez la période (ex. Octobre 2026).", false);
+    setSaving(true);
+    const r = await postJson(
+      "/api/admin/editions",
+      { id: editing.id, date: eDate.trim(), title: eTitle.trim() || "Le Point Chablais", publishAt: ePublish || null },
+      "PATCH",
+    );
+    setSaving(false);
+    if (r.ok) { flash("Numéro modifié."); setEditing(null); load(); }
+    else flash(r.error, false);
+  }
+
   async function del(ed: Ed) {
     const ok = await confirm({
       title: "Supprimer ce numéro ?",
@@ -42,7 +89,11 @@ export default function Numeros() {
     });
     if (!ok) return;
     const r = await call(`/api/admin/editions?id=${ed.id}`, { method: "DELETE" });
-    if (r.ok) { flash("Numéro supprimé."); load(); } else flash(r.error, false);
+    if (r.ok) {
+      flash("Numéro supprimé.");
+      if (editing?.id === ed.id) setEditing(null);
+      load();
+    } else flash(r.error, false);
   }
 
   return (
@@ -67,13 +118,43 @@ export default function Numeros() {
         </form>
       </div>
 
+      {editing && (
+        <div className="card" ref={editRef}>
+          <h2>Modifier le numéro</h2>
+          <p style={{ color: "var(--muted)", fontSize: 13.5, margin: "0 0 14px" }}>
+            Le PDF et la couverture restent inchangés. Pour les remplacer, supprimez le numéro puis ajoutez-le de nouveau.
+          </p>
+          <form onSubmit={saveEdit}>
+            <div className="grid2">
+              <div className="field"><label>Période (ex. Octobre 2026) *</label><input type="text" value={eDate} onChange={(e) => setEDate(e.target.value)} required disabled={saving} /></div>
+              <div className="field"><label>Titre</label><input type="text" value={eTitle} onChange={(e) => setETitle(e.target.value)} disabled={saving} /></div>
+              <div className="field"><label>Date de sortie (optionnel)</label><input type="date" value={ePublish} onChange={(e) => setEPublish(e.target.value)} disabled={saving} /></div>
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button className="btn btn-b" type="submit" disabled={saving}>{saving ? "Enregistrement…" : "Enregistrer les modifications"}</button>
+              <button className="btn btn-o" type="button" onClick={() => setEditing(null)} disabled={saving}>Annuler</button>
+            </div>
+          </form>
+        </div>
+      )}
+
       <div className="card">
-        <h2>Numéros en ligne ({eds.length})</h2>
+        <h2>Numéros en ligne ({q.trim() ? `${shown.length} sur ${eds.length}` : eds.length})</h2>
+
+        <div className="tools" style={{ marginBottom: 14 }}>
+          <div className="sbox">
+            <Icon name="search" size={17} />
+            <input type="text" placeholder="Rechercher un numéro (période, titre)…" value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
+        </div>
+
         {eds.length === 0 ? (
           <p style={{ color: "var(--muted)", fontSize: 14 }}>Aucun numéro pour le moment.</p>
+        ) : shown.length === 0 ? (
+          <p style={{ color: "var(--muted)", fontSize: 14 }}>Aucun numéro ne correspond à « {q.trim()} ».</p>
         ) : (
           <div className="eds">
-            {eds.map((e) => (
+            {shown.map((e) => (
               <div className="edc" key={e.id}>
                 <img src={`/api/cover/${e.id}`} alt={`Couverture ${e.date}`} />
                 <div className="b">
@@ -81,6 +162,7 @@ export default function Numeros() {
                   <div style={{ color: "var(--muted)", fontSize: 12, marginBottom: 8 }}>{e.date}{e.publishAt ? ` · sortie ${e.publishAt}` : ""}</div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     <a className="btn btn-o" href={`/lire/${e.id}`} target="_blank" rel="noreferrer">Aperçu</a>
+                    <button className="btn btn-o" onClick={() => startEdit(e)}>Modifier</button>
                     <button className="btn btn-d" onClick={() => del(e)}>Supprimer</button>
                   </div>
                 </div>

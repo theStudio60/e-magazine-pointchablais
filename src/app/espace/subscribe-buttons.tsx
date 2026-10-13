@@ -2,13 +2,21 @@
 
 import { useEffect, useState } from "react";
 
-export default function SubscribeButtons({
-  prixMensuel = "5",
-  prixAnnuel = "49",
-}: {
-  prixMensuel?: string;
-  prixAnnuel?: string;
-}) {
+export type PackLite = {
+  key: string;
+  name: string;
+  interval: "month" | "year";
+  price: number; // centimes
+  recommended?: boolean;
+};
+
+// 4900 -> "49.–" ; 450 -> "4.50"
+const amount = (centimes: number) => (centimes % 100 === 0 ? `${centimes / 100}.–` : (centimes / 100).toFixed(2));
+
+const label = (p: PackLite) =>
+  p.key === "mensuel" ? "Choisir le mensuel" : p.key === "annuel" ? "Choisir l'annuel" : "Choisir cette formule";
+
+export default function SubscribeButtons({ packs = [] }: { packs?: PackLite[] }) {
   const [loading, setLoading] = useState<string | null>(null);
 
   // Quand on revient avec la flèche « Retour » du navigateur, la page est restaurée
@@ -21,29 +29,32 @@ export default function SubscribeButtons({
     return () => window.removeEventListener("pageshow", onShow);
   }, []);
 
-  function subscribe(plan: "mensuel" | "annuel") {
+  function subscribe(plan: string) {
     setLoading(plan);
-    window.location.href = `/abonnement?plan=${plan}`;
+    window.location.href = `/abonnement?plan=${encodeURIComponent(plan)}`;
+  }
+
+  if (packs.length === 0) {
+    return <p style={{ color: "var(--muted)", fontSize: 14.5, margin: 0 }}>Aucune formule disponible pour le moment.</p>;
   }
 
   return (
     <div>
       <div className="offers">
-        <div className="offer">
-          <div className="on">Mensuel</div>
-          <div className="op"><b>CHF {prixMensuel}.–</b> / mois</div>
-          <button className="btn btn-blue" onClick={() => subscribe("mensuel")} disabled={loading !== null}>
-            {loading === "mensuel" ? "…" : "Choisir le mensuel"}
-          </button>
-        </div>
-        <div className="offer feat">
-          <span className="tag">Recommandé</span>
-          <div className="on">Annuel</div>
-          <div className="op"><b>CHF {prixAnnuel}.–</b> / an</div>
-          <button className="btn btn-mauve" onClick={() => subscribe("annuel")} disabled={loading !== null}>
-            {loading === "annuel" ? "…" : "Choisir l'annuel"}
-          </button>
-        </div>
+        {packs.map((p) => (
+          <div className={"offer" + (p.recommended ? " feat" : "")} key={p.key}>
+            {p.recommended && <span className="tag">Recommandé</span>}
+            <div className="on">{p.name}</div>
+            <div className="op"><b>CHF {amount(p.price)}</b> / {p.interval === "year" ? "an" : "mois"}</div>
+            <button
+              className={"btn " + (p.recommended ? "btn-mauve" : "btn-blue")}
+              onClick={() => subscribe(p.key)}
+              disabled={loading !== null}
+            >
+              {loading === p.key ? "…" : label(p)}
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );

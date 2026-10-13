@@ -360,6 +360,25 @@ export async function removeEdition(id: string): Promise<boolean> {
   return res.affectedRows > 0;
 }
 
+// Modifie la période, le titre et/ou la date de sortie d'un numéro existant
+// (le PDF et la couverture ne sont pas touchés).
+export async function updateEdition(
+  id: string,
+  patch: { date?: string; title?: string; publishAt?: string | null },
+): Promise<Edition | undefined> {
+  const sets: string[] = [];
+  const vals: unknown[] = [];
+  if (patch.date !== undefined) { sets.push("date_label = ?"); vals.push(patch.date); }
+  if (patch.title !== undefined) { sets.push("title = ?"); vals.push(patch.title); }
+  if (patch.publishAt !== undefined) { sets.push("publish_at = ?"); vals.push(patch.publishAt || null); }
+  if (sets.length) await run(`UPDATE editions SET ${sets.join(", ")} WHERE id = ?`, [...vals, id]);
+  const rows = await select<EditionRow>(
+    "SELECT id, date_label, title, publish_at FROM editions WHERE id = ? LIMIT 1",
+    [id],
+  );
+  return rows[0] ? toEdition(rows[0]) : undefined;
+}
+
 // ---------------------------------------------------------------------------
 // Factures
 // ---------------------------------------------------------------------------

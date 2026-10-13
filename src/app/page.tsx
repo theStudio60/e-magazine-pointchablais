@@ -1,4 +1,4 @@
-import { getPack } from "@/lib/db";
+import { getSettings, type Pack } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -79,7 +79,7 @@ const HTML = `
   .offres .kick{text-align:center;text-transform:uppercase;letter-spacing:.2em;font-size:12px;font-weight:600;color:var(--mauve);margin:0 0 10px}
   .offres h2{text-align:center;font-weight:700;font-size:clamp(26px,3.6vw,36px);color:var(--blue-ink);margin:0 0 8px}
   .offres .sub{text-align:center;color:var(--muted);margin:0 auto 46px;font-size:15.5px;max-width:46ch}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:26px;max-width:820px;margin:0 auto;align-items:stretch}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:26px;max-width:var(--gmax,820px);margin:0 auto;align-items:stretch;padding-inline:18px}
   @media(max-width:680px){.grid{grid-template-columns:1fr;max-width:420px}}
 
   .card{background:var(--card);border-radius:18px;padding:36px 32px 34px;position:relative;
@@ -201,41 +201,8 @@ const HTML = `
   <p class="kick">Nos formules</p>
   <h2>Choisissez votre abonnement</h2>
   <p class="sub">Le journal en version numérique, sans engagement. Résiliable à tout moment.</p>
-  <div class="grid">
-
-    <div class="card">
-      <div class="illus">
-        <div class="dv-phone"><div class="s"><img src="/mobile.jpg" alt=""></div></div>
-      </div>
-      <p class="plan">Mensuel</p>
-      <div class="price"><span class="amt">__PRIX_M__</span><span class="cur">CHF/mois</span></div>
-      <p class="per">Facturé chaque mois</p>
-      <ul class="feats">
-        <li><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#e6f0f4"/><path d="M7 12.5l3 3 7-7" fill="none" stroke="#1c6b8c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Le journal complet en numérique</li>
-        <li><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#e6f0f4"/><path d="M7 12.5l3 3 7-7" fill="none" stroke="#1c6b8c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Lecture sur tous vos écrans</li>
-        <li><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#e6f0f4"/><path d="M7 12.5l3 3 7-7" fill="none" stroke="#1c6b8c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Sans engagement</li>
-      </ul>
-      <a class="btn btn-blue" href="/inscription?plan=mensuel">Choisir le mensuel</a>
-    </div>
-
-    <div class="card feat">
-      <span class="ribbon">Recommandé</span>
-      <div class="illus duo">
-        <div class="dv-mon"><div class="screen"><img src="/site.jpg" alt=""></div><div class="stand"></div><div class="base"></div></div>
-        <div class="dv-phone"><div class="s"><img src="/mobile.jpg" alt=""></div></div>
-        <span class="plus">+</span>
-      </div>
-      <p class="plan">Annuel</p>
-      <div class="price"><span class="amt">__PRIX_A__</span><span class="cur">CHF/an</span></div>
-      <p class="per">Soit un peu plus de 4.– par mois</p>
-      <ul class="feats">
-        <li><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#f2e6ef"/><path d="M7 12.5l3 3 7-7" fill="none" stroke="#9c6b91" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Tout le mensuel, à prix réduit</li>
-        <li><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#f2e6ef"/><path d="M7 12.5l3 3 7-7" fill="none" stroke="#9c6b91" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Accès aux éditions précédentes</li>
-        <li><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#f2e6ef"/><path d="M7 12.5l3 3 7-7" fill="none" stroke="#9c6b91" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Deux mois offerts sur l'année</li>
-      </ul>
-      <a class="btn btn-mauve" href="/inscription?plan=annuel">Choisir l'annuel</a>
-    </div>
-
+  <div class="grid" style="--gmax:__GRID_MAX__px">
+__OFFRES__
   </div>
 </section>
 
@@ -253,9 +220,68 @@ const HTML = `
 
 `;
 
+// ---------------------------------------------------------------------------
+// Cartes de formules, générées depuis les packs « Actifs » de l'administration
+// ---------------------------------------------------------------------------
+const esc = (s: string) =>
+  s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+
+// 4900 -> "49" ; 450 -> "4.50"
+const amount = (centimes: number) => (centimes % 100 === 0 ? String(centimes / 100) : (centimes / 100).toFixed(2));
+
+const check = (mauve: boolean) =>
+  `<svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="${mauve ? "#f2e6ef" : "#e6f0f4"}"/><path d="M7 12.5l3 3 7-7" fill="none" stroke="${mauve ? "#9c6b91" : "#1c6b8c"}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+const ILLUS_PHONE = `<div class="illus">
+        <div class="dv-phone"><div class="s"><img src="/mobile.jpg" alt=""></div></div>
+      </div>`;
+const ILLUS_DUO = `<div class="illus duo">
+        <div class="dv-mon"><div class="screen"><img src="/site.jpg" alt=""></div><div class="stand"></div><div class="base"></div></div>
+        <div class="dv-phone"><div class="s"><img src="/mobile.jpg" alt=""></div></div>
+        <span class="plus">+</span>
+      </div>`;
+
+// Textes de vente : ceux d'origine pour « mensuel » / « annuel », une liste neutre pour les nouveaux packs.
+const FEATS_MENSUEL = ["Le journal complet en numérique", "Lecture sur tous vos écrans", "Sans engagement"];
+const FEATS_ANNUEL = ["Tout le mensuel, à prix réduit", "Accès aux éditions précédentes", "Deux mois offerts sur l'année"];
+const FEATS_MONTH = ["Le journal complet en numérique", "Lecture sur tous vos écrans", "Résiliable à tout moment"];
+const FEATS_YEAR = ["Le journal complet en numérique", "Lecture sur tous vos écrans", "Accès aux éditions précédentes"];
+
+function card(p: Pack): string {
+  const year = p.interval === "year";
+  const feat = !!p.recommended;
+  const feats = p.key === "mensuel" ? FEATS_MENSUEL : p.key === "annuel" ? FEATS_ANNUEL : year ? FEATS_YEAR : FEATS_MONTH;
+  const label = p.key === "mensuel" ? "Choisir le mensuel" : p.key === "annuel" ? "Choisir l'annuel" : "Choisir cette formule";
+  const per = year ? `Soit environ ${(p.price / 1200).toFixed(2)} CHF par mois` : "Facturé chaque mois";
+  return `
+    <div class="card${feat ? " feat" : ""}">
+      ${feat ? '<span class="ribbon">Recommandé</span>' : ""}
+      ${year ? ILLUS_DUO : ILLUS_PHONE}
+      <p class="plan">${esc(p.name)}</p>
+      <div class="price"><span class="amt">${amount(p.price)}</span><span class="cur">${year ? "CHF/an" : "CHF/mois"}</span></div>
+      <p class="per">${per}</p>
+      <ul class="feats">
+        ${feats.map((f) => `<li>${check(feat)}${esc(f)}</li>`).join("\n        ")}
+      </ul>
+      <a class="btn ${feat ? "btn-mauve" : "btn-blue"}" href="/inscription?plan=${encodeURIComponent(p.key)}">${label}</a>
+    </div>`;
+}
+
+// Filet de sécurité si la table des packs est vide (comme avant : 5.– / 49.–).
+const FALLBACK: Pack[] = [
+  { key: "mensuel", name: "Mensuel", interval: "month", price: 500, active: true, recommended: false },
+  { key: "annuel", name: "Annuel", interval: "year", price: 4900, active: true, recommended: true },
+];
+
 export default async function Home() {
-  const m = String(Math.round(((await getPack("mensuel"))?.price ?? 500) / 100));
-  const a = String(Math.round(((await getPack("annuel"))?.price ?? 4900) / 100));
-  const html = HTML.replace("__PRIX_M__", m).replace("__PRIX_A__", a);
+  const { packs } = await getSettings();
+  const list = packs.length ? packs : FALLBACK;
+  const active = list.filter((p) => p.active);
+  const n = active.length;
+  const gridMax = n <= 1 ? 420 : n === 2 ? 820 : 1140;
+  const offres = n
+    ? active.map(card).join("\n")
+    : '<p style="grid-column:1/-1;text-align:center;color:var(--muted)">Aucune formule disponible pour le moment.</p>';
+  const html = HTML.replace("__GRID_MAX__", String(gridMax)).replace("__OFFRES__", () => offres);
   return <main dangerouslySetInnerHTML={{ __html: html }} />;
 }
