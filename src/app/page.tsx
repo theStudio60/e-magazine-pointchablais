@@ -181,7 +181,7 @@ const HTML = `
   <div class="wrap hero-in">
     <div class="fade">
       <span class="eye">Abonnement numérique</span>
-      <h1>Le journal qui réunit <b>Aigle</b>,<br><b>Bex</b> et le Chablais.</h1>
+      <h1>__HERO__</h1>
       <p>Toute votre actualité régionale, désormais en version numérique — à lire dès sa parution, sur tous vos écrans.</p>
     </div>
     <div class="cover-side fade" style="animation-delay:.15s">
@@ -226,6 +226,9 @@ __OFFRES__
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
+// Titre d'accroche par défaut, utilisé si le champ est vide dans Admin → Paramètres.
+const DEFAULT_HERO = "Le journal qui réunit <b>Aigle</b>,<br><b>Bex</b> et le Chablais.";
+
 // 4900 -> "49" ; 450 -> "4.50"
 const amount = (centimes: number) => (centimes % 100 === 0 ? String(centimes / 100) : (centimes / 100).toFixed(2));
 
@@ -241,18 +244,24 @@ const ILLUS_DUO = `<div class="illus duo">
         <span class="plus">+</span>
       </div>`;
 
-// Textes de vente : ceux d'origine pour « mensuel » / « annuel », une liste neutre pour les nouveaux packs.
+// Textes de vente par défaut : ceux d'origine pour « mensuel » / « annuel », une liste neutre pour les nouveaux packs.
+// Si la description / les avantages sont remplis dans Admin → Packs, ce sont eux qui s'affichent.
 const FEATS_MENSUEL = ["Le journal complet en numérique", "Lecture sur tous vos écrans", "Sans engagement"];
 const FEATS_ANNUEL = ["Tout le mensuel, à prix réduit", "Accès aux éditions précédentes", "Deux mois offerts sur l'année"];
 const FEATS_MONTH = ["Le journal complet en numérique", "Lecture sur tous vos écrans", "Résiliable à tout moment"];
 const FEATS_YEAR = ["Le journal complet en numérique", "Lecture sur tous vos écrans", "Accès aux éditions précédentes"];
 
-function card(p: Pack): string {
+type PackText = Pack & { description?: string; features?: string[] };
+
+function card(p: PackText): string {
   const year = p.interval === "year";
   const feat = !!p.recommended;
-  const feats = p.key === "mensuel" ? FEATS_MENSUEL : p.key === "annuel" ? FEATS_ANNUEL : year ? FEATS_YEAR : FEATS_MONTH;
+  const custom = (p.features ?? []).map((f) => String(f).trim()).filter(Boolean);
+  const defaults = p.key === "mensuel" ? FEATS_MENSUEL : p.key === "annuel" ? FEATS_ANNUEL : year ? FEATS_YEAR : FEATS_MONTH;
+  const feats = custom.length ? custom : defaults;
   const label = p.key === "mensuel" ? "Choisir le mensuel" : p.key === "annuel" ? "Choisir l'annuel" : "Choisir cette formule";
-  const per = year ? `Soit environ ${(p.price / 1200).toFixed(2)} CHF par mois` : "Facturé chaque mois";
+  const desc = String(p.description ?? "").trim();
+  const per = desc ? esc(desc) : year ? `Soit environ ${(p.price / 1200).toFixed(2)} CHF par mois` : "Facturé chaque mois";
   return `
     <div class="card${feat ? " feat" : ""}">
       ${feat ? '<span class="ribbon">Recommandé</span>' : ""}
@@ -274,7 +283,7 @@ const FALLBACK: Pack[] = [
 ];
 
 export default async function Home() {
-  const { packs } = await getSettings();
+  const { packs, site } = await getSettings();
   const list = packs.length ? packs : FALLBACK;
   const active = list.filter((p) => p.active);
   const n = active.length;
@@ -282,6 +291,11 @@ export default async function Home() {
   const offres = n
     ? active.map(card).join("\n")
     : '<p style="grid-column:1/-1;text-align:center;color:var(--muted)">Aucune formule disponible pour le moment.</p>';
-  const html = HTML.replace("__GRID_MAX__", String(gridMax)).replace("__OFFRES__", () => offres);
+  // Titre d'accroche : celui des Paramètres (échappé), sinon le titre par défaut.
+  const hero = String(site?.heroTitle ?? "").trim();
+  const heroHtml = hero ? esc(hero) : DEFAULT_HERO;
+  const html = HTML.replace("__HERO__", () => heroHtml)
+    .replace("__GRID_MAX__", String(gridMax))
+    .replace("__OFFRES__", () => offres);
   return <main dangerouslySetInnerHTML={{ __html: html }} />;
 }

@@ -11,19 +11,32 @@ type Overview = {
 
 export default function Dashboard() {
   const [d, setD] = useState<Overview | null>(null);
-  useEffect(() => { fetch("/api/admin/overview").then((r) => r.json()).then(setD).catch(() => {}); }, []);
+  const [err, setErr] = useState(false);
+  useEffect(() => {
+    fetch("/api/admin/overview")
+      .then((r) => r.json())
+      .then((j) => {
+        // Réponse d'erreur ({ error }) ou format inattendu : on n'affiche pas de données.
+        if (j && j.stats) setD(j as Overview);
+        else setErr(true);
+      })
+      .catch(() => setErr(true));
+  }, []);
   const s = d?.stats;
+  const membres = d?.recentMembres ?? [];
+  const factures = d?.recentInvoices ?? [];
   const fmtd = (iso?: string) => (iso ? new Date(iso).toLocaleDateString("fr-CH") : "—");
 
   return (
     <>
       <h1 className="t">Tableau de bord</h1>
       <p className="sub">Voici un aperçu de votre plateforme.</p>
+      {err && <div className="msg err">Impossible de charger les données du tableau de bord.</div>}
 
       <div className="stats">
         <StatCard icon="users" color="blue" value={s?.totalMembres ?? "—"} label="Total membres" />
         <StatCard icon="card" color="green" value={s?.actifs ?? "—"} label="Abonnements actifs" />
-        <StatCard icon="cash" color="purple" value={s ? "CHF " + s.revenuTotal.toFixed(0) : "—"} label="Revenu encaissé" />
+        <StatCard icon="cash" color="purple" value={s ? "CHF " + Number(s.revenuTotal ?? 0).toFixed(0) : "—"} label="Revenu encaissé" />
         <StatCard icon="clock" color="orange" value={s?.enAttente ?? "—"} label="Paiements en attente" />
       </div>
 
@@ -31,7 +44,7 @@ export default function Dashboard() {
         <div className="card">
           <h2>Membres récents</h2>
           <div className="list">
-            {d?.recentMembres.length ? d.recentMembres.map((m, i) => (
+            {membres.length ? membres.map((m, i) => (
               <div className="it" key={i}>
                 <div className="who"><span className="mav">{initials(m.name || m.email)}</span><div><b>{m.name || "—"}</b><br /><span style={{ color: "var(--muted)", fontSize: 12 }}>{m.email}</span></div></div>
                 <span style={{ color: "var(--muted)", fontSize: 12.5 }}>{fmtd(m.createdAt)}</span>
@@ -42,7 +55,7 @@ export default function Dashboard() {
         <div className="card">
           <h2>Activité récente (factures)</h2>
           <div className="list">
-            {d?.recentInvoices.length ? d.recentInvoices.map((f) => (
+            {factures.length ? factures.map((f) => (
               <div className="it" key={f.id}>
                 <div><b>{f.number}</b><br /><span style={{ color: "var(--muted)", fontSize: 12 }}>{f.userName}</span></div>
                 <div style={{ textAlign: "right" }}>
