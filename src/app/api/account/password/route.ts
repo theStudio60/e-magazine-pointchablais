@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUserId, verifyPassword, hashPassword } from "@/lib/auth";
 import { getUserById, updateUser } from "@/lib/db";
+import { sendMail, passwordChangedEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -14,5 +15,10 @@ export async function POST(req: Request) {
   if (!(await verifyPassword(current || "", user.passwordHash)))
     return NextResponse.json({ error: "Mot de passe actuel incorrect." }, { status: 400 });
   await updateUser(user.id, { passwordHash: await hashPassword(next) });
+  sendMail({
+    to: user.email,
+    subject: "Mot de passe modifié",
+    html: passwordChangedEmail(user.name || ""),
+  }).catch(() => {});
   return NextResponse.json({ ok: true });
 }

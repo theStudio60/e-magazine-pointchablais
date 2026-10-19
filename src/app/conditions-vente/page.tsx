@@ -6,7 +6,7 @@ export default function Page() {
   return (
     <LegalLayout title="Conditions générales de vente">
       <h2>1. Éditeur</h2>
-      <p>Le présent portail est édité par Le Point Chablais, Rue Centrale 9, 1892 Lavey-Village, Suisse. Contact : zoe@pointchablais.ch.</p>
+      <p>Le présent portail est édité par Le Point Chablais, Rue Centrale 9, 1892 Lavey-Village, Suisse. Contact : abo@pointchablais.ch.</p>
 
       <h2>2. Objet</h2>
       <p>Les présentes conditions régissent la vente d&apos;abonnements numériques donnant accès à la version électronique (PDF) du magazine Le Point Chablais.</p>

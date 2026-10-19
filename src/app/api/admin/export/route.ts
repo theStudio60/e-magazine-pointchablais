@@ -1,113 +1,64 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
-import { listUsers, listInvoices } from "@/lib/db";
+import { listUsers } from "@/lib/db";
 
 export const runtime = "nodejs";
 
-const DAY = 86400000;
 const RE = /^\d{4}-\d{2}-\d{2}$/;
+const cap = (s: string | null) => (s ? s[0].toUpperCase() + s.slice(1) : "—");
+const fmt = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleDateString("fr-CH") : "—");
 
-function toIso(x: unknown): string | null {
-  if (x === null || x === undefined || x === "") return null;
-  const d = typeof x === "number" ? new Date(x) : new Date(String(x));
-  return isNaN(d.getTime()) ? null : d.toISOString();
-}
-
-// La date d'une facture : on essaie les noms de champ courants.
-function invoiceDate(i: Record<string, unknown>): string | null {
-  for (const k of ["date", "ts", "createdAt", "created", "paidAt"]) {
-    const v = toIso(i[k]);
-    if (v) return v;
-  }
-  return null;
+// Protège Excel contre l'injection de formule (=, +, -, @) et échappe les guillemets.
+function csvCell(v: string): string {
+  let s = v ?? "";
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  return '"' + s.replace(/"/g, '""') + '"';
 }
 
 export async function GET(req: Request) {
   if (!(await requireAdmin())) return NextResponse.json({ error: "Interdit" }, { status: 403 });
 
   const sp = new URL(req.url).searchParams;
-  const to = sp.get("to") || new Date().toISOString().slice(0, 10);
-  let from = sp.get("from") || "";
-  if (!from) {
-    const d = new Date();
-    d.setUTCDate(1);
-    d.setUTCMonth(d.getUTCMonth() - 11);
-    from = d.toISOString().slice(0, 10);
-  }
-  if (!RE.test(from) || !RE.test(to) || isNaN(Date.parse(from)) || isNaN(Date.parse(to))) {
-    return NextResponse.json({ error: "Dates invalides." }, { status: 400 });
-  }
-  if (from > to) return NextResponse.json({ error: "La date de début doit précéder la date de fin." }, { status: 400 });
-  const days = Math.round((Date.parse(to) - Date.parse(from)) / DAY) + 1;
-  if (days > 1827) return NextResponse.json({ error: "Période trop longue (5 ans maximum)." }, { status: 400 });
+  const from = sp.get("from") || "";
+  const to = sp.get("to") || "";
+  const hasRange = RE.test(from) && RE.test(to);
 
-  // Par jour seulement si la période est courte (92 jours max), sinon par mois.
-  const group: "day" | "month" = sp.get("group") === "day" && days <= 92 ? "day" : "month";
+  // Abonnés = membres (hors admins).
+  let members = (await listUsers()).filter((u) => u.role !== "admin");
 
-  const keys: string[] = [];
-  if (group === "day") {
-    for (let t = Date.parse(from); t <= Date.parse(to); t += DAY) keys.push(new Date(t).toISOString().slice(0, 10));
-  } else {
-    const s = new Date(from + "T00:00:00Z");
-    const endKey = to.slice(0, 7);
-    let y = s.getUTCFullYear();
-    let m = s.getUTCMonth();
-    for (;;) {
-      const k = `${y}-${String(m + 1).padStart(2, "0")}`;
-      keys.push(k);
-      if (k >= endKey) break;
-      m++;
-      if (m > 11) { m = 0; y++; }
-    }
-  }
-  const idx = new Map(keys.map((k, i) => [k, i]));
-  const keyOf = (isoStr: string) => (group === "day" ? isoStr.slice(0, 10) : isoStr.slice(0, 7));
-  const zeros = () => keys.map(() => 0);
-
-  const nouveauxMembres = zeros();
-  const abonnementsPayes = zeros();
-  const revenu = zeros();
-
-  // Membres (hors admins) : nouveaux par période, et total cumulé.
-  const members = (await listUsers()).filter((u) => u.role !== "admin");
-  let base = 0; // membres créés avant la période (ou sans date)
-  for (const u of members) {
-    const c = toIso(u.createdAt);
-    if (!c) { base++; continue; }
-    const day = c.slice(0, 10);
-    if (day < from) { base++; continue; }
-    if (day > to) continue;
-    const i = idx.get(keyOf(c));
-    if (i !== undefined) nouveauxMembres[i]++;
-  }
-  const membresTotal: number[] = [];
-  let run = base;
-  for (let i = 0; i < keys.length; i++) { run += nouveauxMembres[i]; membresTotal.push(run); }
-
-  // Factures payées : abonnements payés et revenus (montants en centimes → CHF).
-  const invoices = (await listInvoices()) as unknown as Record<string, unknown>[];
-  let sansDate = 0;
-  for (const inv of invoices) {
-    if (inv.status !== "paye") continue;
-    const d = invoiceDate(inv);
-    if (!d) { sansDate++; continue; }
-    const day = d.slice(0, 10);
-    if (day < from || day > to) continue;
-    const i = idx.get(keyOf(d));
-    if (i === undefined) continue;
-    abonnementsPayes[i]++;
-    revenu[i] += (Number(inv.amount) || 0) / 100;
+  // Variante « inscrits sur la période » : filtre par date d'inscription.
+  if (hasRange) {
+    members = members.filter((u) => {
+      if (!u.createdAt) return false;
+      const d = u.createdAt.slice(0, 10);
+      return d >= from && d <= to;
+    });
   }
 
-  const sum = (a: number[]) => a.reduce((s, v) => s + v, 0);
-  return NextResponse.json({
-    from, to, group, keys,
-    series: { nouveauxMembres, membresTotal, abonnementsPayes, revenu },
-    totals: {
-      nouveauxMembres: sum(nouveauxMembres),
-      abonnementsPayes: sum(abonnementsPayes),
-      revenu: sum(revenu),
+  // Plus récents d'abord.
+  members.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+
+  const head = ["N° abonné", "Nom", "E-mail", "Formule", "Statut", "Inscription", "Échéance"];
+  const body = members.map((u) => [
+    u.subscriberNo,
+    u.name || "",
+    u.email,
+    cap(u.plan),
+    u.status === "active" ? "Actif" : "Inactif",
+    fmt(u.createdAt),
+    fmt(u.currentPeriodEnd),
+  ]);
+
+  // BOM + séparateur « ; » : s'ouvre proprement dans Excel (accents inclus).
+  const lines = [head, ...body];
+  const csv = "\uFEFF" + lines.map((l) => l.map(csvCell).join(";")).join("\r\n");
+
+  const suffix = hasRange ? `${from}_${to}` : new Date().toISOString().slice(0, 10);
+  return new NextResponse(csv, {
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="abonnes-${suffix}.csv"`,
+      "Cache-Control": "no-store",
     },
-    facturesSansDate: sansDate,
   });
 }

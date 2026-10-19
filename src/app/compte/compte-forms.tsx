@@ -20,6 +20,9 @@ h1{color:var(--blue-ink);font-size:24px;margin:28px 0 18px}
 label{display:block;font-size:13px;font-weight:600;margin:0 0 5px}
 input{width:100%;font-family:inherit;font-size:15px;padding:12px 13px;border:1.5px solid var(--line);border-radius:8px;margin-bottom:14px}
 input:focus{outline:0;border-color:var(--mauve);box-shadow:0 0 0 4px var(--mauve-soft)}
+.pw{position:relative}
+.pw input{padding-right:44px}
+.pw .eye{position:absolute;right:10px;top:11px;background:none;border:0;cursor:pointer;color:var(--muted);padding:4px;display:flex}
 .btn{background:var(--blue);color:#fff;border:0;border-radius:7px;padding:14px 22px;font-size:16px;line-height:1.3;font-weight:600;font-family:inherit;cursor:pointer}
 @media(max-width:620px){.btn{font-size:17px;padding:15px 22px;width:100%}}
 .btn:hover{background:var(--blue-deep)}
@@ -27,17 +30,27 @@ input:focus{outline:0;border-color:var(--mauve);box-shadow:0 0 0 4px var(--mauve
 .msg.ok{background:#e5f4ec;color:#1f7a4d}.msg.err{background:#fdeceb;color:#b3261e}
 `;
 
+function EyeBtn({ shown, onClick }: { shown: boolean; onClick: () => void }) {
+  return (
+    <button type="button" className="eye" onClick={onClick} aria-label={shown ? "Masquer le mot de passe" : "Afficher le mot de passe"}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" stroke="currentColor" strokeWidth="1.8" />
+        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
+      </svg>
+    </button>
+  );
+}
+
 export default function CompteForms({ name, email, address }: { name: string; email: string; address: string }) {
   const [profile, setProfile] = useState({ name, email, address });
-  // Dernières valeurs enregistrées : sert à détecter s'il y a eu une vraie modification.
   const [saved, setSaved] = useState({ name, email, address });
   const [pmsg, setPmsg] = useState<{ t: string; ok: boolean } | null>(null);
   const [cur, setCur] = useState(""); const [next, setNext] = useState(""); const [next2, setNext2] = useState("");
   const [wmsg, setWmsg] = useState<{ t: string; ok: boolean } | null>(null);
+  const [showCur, setShowCur] = useState(false);
+  const [showNext, setShowNext] = useState(false);
+  const [showNext2, setShowNext2] = useState(false);
 
-  // Ancres : #demenagement -> carte "Mes coordonnées" (champ Adresse),
-  //          #identifiants -> carte "Changer mon mot de passe".
-  // Amène l'utilisateur au bon formulaire, le met en évidence et place le curseur dedans.
   useEffect(() => {
     let t1: ReturnType<typeof setTimeout> | undefined;
     let t2: ReturnType<typeof setTimeout> | undefined;
@@ -70,8 +83,6 @@ export default function CompteForms({ name, email, address }: { name: string; em
       email: profile.email.trim(),
       address: profile.address.trim(),
     };
-
-    // Aucune modification : on n'envoie rien et on n'affiche aucun message.
     if (
       clean.name === saved.name.trim() &&
       clean.email === saved.email.trim() &&
@@ -80,7 +91,6 @@ export default function CompteForms({ name, email, address }: { name: string; em
       setPmsg(null);
       return;
     }
-
     if (!EMAIL_RE.test(clean.email)) {
       return setPmsg({ t: "Adresse e-mail invalide (ex. nom@domaine.ch).", ok: false });
     }
@@ -105,7 +115,7 @@ export default function CompteForms({ name, email, address }: { name: string; em
     if (next !== next2) return setWmsg({ t: "Les deux mots de passe ne correspondent pas.", ok: false });
     const r = await fetch("/api/account/password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ current: cur, next }) });
     const d = await r.json();
-    if (r.ok) { setWmsg({ t: "Mot de passe modifié.", ok: true }); setCur(""); setNext(""); }
+    if (r.ok) { setWmsg({ t: "Mot de passe modifié.", ok: true }); setCur(""); setNext(""); setNext2(""); }
     else setWmsg({ t: d.error || "Erreur.", ok: false });
   }
 
@@ -143,11 +153,20 @@ export default function CompteForms({ name, email, address }: { name: string; em
           {wmsg && <div className={"msg " + (wmsg.ok ? "ok" : "err")}>{wmsg.t}</div>}
           <form onSubmit={savePwd}>
             <label>Mot de passe actuel</label>
-            <input type="password" value={cur} onChange={(e) => setCur(e.target.value)} required />
+            <div className="pw">
+              <input type={showCur ? "text" : "password"} value={cur} onChange={(e) => setCur(e.target.value)} required />
+              <EyeBtn shown={showCur} onClick={() => setShowCur((s) => !s)} />
+            </div>
             <label>Nouveau mot de passe</label>
-            <input type="password" value={next} onChange={(e) => setNext(e.target.value)} placeholder="6 caractères minimum" required />
+            <div className="pw">
+              <input type={showNext ? "text" : "password"} value={next} onChange={(e) => setNext(e.target.value)} placeholder="6 caractères minimum" required />
+              <EyeBtn shown={showNext} onClick={() => setShowNext((s) => !s)} />
+            </div>
             <label>Confirmer le nouveau mot de passe</label>
-            <input type="password" value={next2} onChange={(e) => setNext2(e.target.value)} placeholder="Retapez le mot de passe" autoComplete="new-password" required />
+            <div className="pw">
+              <input type={showNext2 ? "text" : "password"} value={next2} onChange={(e) => setNext2(e.target.value)} placeholder="Retapez le mot de passe" autoComplete="new-password" required />
+              <EyeBtn shown={showNext2} onClick={() => setShowNext2((s) => !s)} />
+            </div>
             <button className="btn" type="submit">Modifier le mot de passe</button>
           </form>
         </div>

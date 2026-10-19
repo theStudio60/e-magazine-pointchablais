@@ -3,7 +3,7 @@ import fs from "fs";
 import { EDITIONS_DIR, COVERS_DIR, editionPdfPath, coverPath } from "@/lib/storage";
 import { prerenderEdition, clearEditionCache } from "@/lib/pdf-render";
 import { requireAdmin, safe } from "@/lib/admin";
-import { addEdition, removeEdition, getSettings, addLog } from "@/lib/db";
+import { addEdition, removeEdition, updateEdition, getSettings, addLog } from "@/lib/db";
 
 export const runtime = "nodejs";
 
@@ -27,8 +27,6 @@ export const POST = safe(async (req: Request) => {
   if (!pdf || typeof pdf.arrayBuffer !== "function" || pdf.size === 0)
     return NextResponse.json({ error: "Le fichier PDF est requis." }, { status: 400 });
 
-  // 1) On lit (et valide) TOUT le téléversement AVANT de créer le numéro.
-  //    Ainsi un envoi coupé ne laisse jamais de numéro « fantôme » en base.
   let pdfBuf: Buffer;
   let coverBuf: Buffer | null = null;
   try {
@@ -46,7 +44,6 @@ export const POST = safe(async (req: Request) => {
     }
   }
 
-  // 2) Fichiers reçus en entier : on crée le numéro puis on écrit sur le disque.
   const ed = await addEdition(date, title, publishAt);
   try {
     fs.mkdirSync(EDITIONS_DIR, { recursive: true });
@@ -63,6 +60,32 @@ export const POST = safe(async (req: Request) => {
   clearEditionCache(ed.id);
   prerenderEdition(ed.id).catch((e) => console.error("[liseuse] pré-rendu", ed.id, e));
   await addLog(admin.email, "Numéro ajouté", `${ed.title} — ${ed.date}${publishAt ? ` (sortie ${publishAt})` : ""}`);
+  return NextResponse.json({ ok: true, edition: ed });
+});
+
+export const PATCH = safe(async (req: Request) => {
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "Interdit" }, { status: 403 });
+
+  const body = (await req.json().catch(() => ({}))) as {
+    id?: string;
+    date?: string;
+    title?: string;
+    publishAt?: string | null;
+  };
+
+  const id = String(body.id || "");
+  if (!/^ed\d+$/.test(id)) return NextResponse.json({ error: "Id invalide" }, { status: 400 });
+
+  const date = String(body.date || "").trim();
+  if (!date) return NextResponse.json({ error: "La période est requise (ex. « Octobre 2026 »)." }, { status: 400 });
+  const title = String(body.title || "Le Point Chablais").trim() || "Le Point Chablais";
+  const publishAt = body.publishAt ? String(body.publishAt).trim() || null : null;
+
+  const ed = await updateEdition(id, { date, title, publishAt });
+  if (!ed) return NextResponse.json({ error: "Numéro introuvable." }, { status: 404 });
+
+  await addLog(admin.email, "Numéro modifié", `${ed.title} — ${ed.date}${publishAt ? ` (sortie ${publishAt})` : ""}`);
   return NextResponse.json({ ok: true, edition: ed });
 });
 

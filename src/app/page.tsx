@@ -156,7 +156,9 @@ const HTML = `
     .foot .pays{justify-content:center}
     .foot-bottom{line-height:1.9;padding:16px 0 20px}
   }
-
+  @media(min-width:621px) and (max-width:900px){
+    .foot{justify-content:center;gap:30px}
+  }
   @media(prefers-reduced-motion:reduce){*{animation:none!important}.stage .mag{transform:rotate(-4deg)}.phone{transform:rotate(5deg)}}
 </style>
 

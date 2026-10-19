@@ -134,6 +134,16 @@ export default function Abonnements() {
           <option value="mensuel">Mensuel</option>
           <option value="annuel">Annuel</option>
         </select>
+        <select value={echeance} onChange={(e) => { setPage(1); setEcheance(e.target.value); }}>
+          <option value="">Toutes les échéances</option>
+          <option value="30j">Expire sous 30 jours</option>
+          <option value="depassee">Échéance dépassée</option>
+        </select>
+        <select value={sort} onChange={(e) => { setPage(1); setSort(e.target.value); }}>
+          <option value="echeance">Échéance (plus proche)</option>
+          <option value="echeance-desc">Échéance (plus lointaine)</option>
+          <option value="nom">Nom (A→Z)</option>
+        </select>
       </div>
 
       <div className="card flush">
