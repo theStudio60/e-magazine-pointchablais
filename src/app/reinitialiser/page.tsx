@@ -12,12 +12,26 @@ h1{color:var(--blue-ink);font-size:22px;margin:0 0 20px;text-align:center}
 label{font-size:13px;font-weight:600;display:block;margin:0 0 6px}
 input{width:100%;font-family:inherit;font-size:15px;padding:12px 13px;border:1.5px solid var(--line);border-radius:8px;margin-bottom:16px}
 input:focus{outline:0;border-color:var(--mauve);box-shadow:0 0 0 4px var(--mauve-soft)}
+.pw{position:relative}
+.pw input{padding-right:44px}
+.pw .eye{position:absolute;right:10px;top:11px;background:none;border:0;cursor:pointer;color:var(--muted);padding:4px;display:flex}
 .btn{width:100%;background:var(--blue);color:#fff;border:0;border-radius:7px;padding:13px;font-weight:600;font-family:inherit;cursor:pointer}
 .btn:hover{background:var(--blue-deep)}
 .msg{padding:12px;border-radius:8px;font-size:13.5px;margin-bottom:14px}
 .msg.ok{background:#e5f4ec;color:#1f7a4d}.msg.err{background:#fdeceb;color:#b3261e}
 .center{text-align:center;margin-top:16px;font-size:14px}
 `;
+
+function EyeBtn({ shown, onClick }: { shown: boolean; onClick: () => void }) {
+  return (
+    <button type="button" className="eye" onClick={onClick} aria-label={shown ? "Masquer le mot de passe" : "Afficher le mot de passe"}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" stroke="currentColor" strokeWidth="1.8" />
+        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
+      </svg>
+    </button>
+  );
+}
 
 export default function Reset() {
   const [token, setToken] = useState("");
@@ -26,6 +40,8 @@ export default function Reset() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null);
   const [done, setDone] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
+  const [showPwd2, setShowPwd2] = useState(false);
 
   useEffect(() => {
     setToken(new URLSearchParams(window.location.search).get("token") || "");
@@ -56,9 +72,15 @@ export default function Reset() {
         {!done ? (
           <form onSubmit={submit}>
             <label>Nouveau mot de passe</label>
-            <input type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="6 caractères minimum" autoComplete="new-password" required />
+            <div className="pw">
+              <input type={showPwd ? "text" : "password"} value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="6 caractères minimum" autoComplete="new-password" required />
+              <EyeBtn shown={showPwd} onClick={() => setShowPwd((s) => !s)} />
+            </div>
             <label>Confirmer le mot de passe</label>
-            <input type="password" value={pwd2} onChange={(e) => setPwd2(e.target.value)} placeholder="Retapez le mot de passe" autoComplete="new-password" required />
+            <div className="pw">
+              <input type={showPwd2 ? "text" : "password"} value={pwd2} onChange={(e) => setPwd2(e.target.value)} placeholder="Retapez le mot de passe" autoComplete="new-password" required />
+              <EyeBtn shown={showPwd2} onClick={() => setShowPwd2((s) => !s)} />
+            </div>
             <button className="btn" type="submit" disabled={loading}>{loading ? "Enregistrement…" : "Réinitialiser"}</button>
           </form>
         ) : (
