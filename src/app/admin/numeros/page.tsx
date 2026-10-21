@@ -6,8 +6,8 @@ import { useConfirm } from "../confirm";
 import { Icon } from "../icons";
 
 type Ed = { id: string; date: string; title: string; publishAt?: string | null };
+type MenuState = { ed: Ed; x: number; top?: number; bottom?: number };
 
-// Recherche sans tenir compte des majuscules ni des accents (« fevrier » trouve « Février »).
 const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 export default function Numeros() {
@@ -15,10 +15,10 @@ export default function Numeros() {
   const { confirm, confirmDialog } = useConfirm();
   const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
-  const sending = useRef(false); // verrou synchrone anti-doublon
+  const sending = useRef(false);
   const [q, setQ] = useState("");
+  const [menu, setMenu] = useState<MenuState | null>(null);
 
-  // Modification d'un numéro existant
   const [editing, setEditing] = useState<Ed | null>(null);
   const [eDate, setEDate] = useState("");
   const [eTitle, setETitle] = useState("");
@@ -33,6 +33,23 @@ export default function Numeros() {
   useEffect(() => { load(); }, [load]);
   function flash(t: string, ok = true) { setMsg({ t, ok }); setTimeout(() => setMsg(null), 4000); }
 
+  // Ferme le menu ⋮ (clic ailleurs, défilement, Échap).
+  useEffect(() => {
+    if (!menu) return;
+    const close = () => setMenu(null);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && close();
+    window.addEventListener("click", close);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    window.addEventListener("keydown", esc);
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+      window.removeEventListener("keydown", esc);
+    };
+  }, [menu]);
+
   const shown = useMemo(() => {
     const needle = norm(q.trim());
     if (!needle) return eds;
@@ -41,7 +58,7 @@ export default function Numeros() {
 
   async function add(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (sending.current) return; // verrou immédiat (le state React arrive trop tard)
+    if (sending.current) return;
     sending.current = true;
     const form = e.currentTarget;
     const fd = new FormData(form);
@@ -60,7 +77,6 @@ export default function Numeros() {
     setETitle(ed.title);
     setEPublish((ed.publishAt || "").slice(0, 10));
   }
-  // Fait défiler la page jusqu'au formulaire de modification quand on l'ouvre.
   useEffect(() => {
     if (editing) editRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [editing]);
@@ -94,6 +110,15 @@ export default function Numeros() {
       if (editing?.id === ed.id) setEditing(null);
       load();
     } else flash(r.error, false);
+  }
+
+  function openMenu(e: React.MouseEvent<HTMLButtonElement>, ed: Ed) {
+    e.stopPropagation();
+    if (menu?.ed.id === ed.id) return setMenu(null);
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = Math.max(8, Math.min(r.right - 180, window.innerWidth - 196));
+    const flip = r.bottom + 180 > window.innerHeight;
+    setMenu(flip ? { ed, x, bottom: window.innerHeight - r.top + 6 } : { ed, x, top: r.bottom + 6 });
   }
 
   return (
@@ -158,12 +183,12 @@ export default function Numeros() {
               <div className="edc" key={e.id}>
                 <img src={`/api/cover/${e.id}`} alt={`Couverture ${e.date}`} />
                 <div className="b">
-                  <div style={{ fontWeight: 600, color: "var(--blue-ink)", fontSize: 13.5 }}>{e.title}</div>
-                  <div style={{ color: "var(--muted)", fontSize: 12, marginBottom: 8 }}>{e.date}{e.publishAt ? ` · sortie ${e.publishAt}` : ""}</div>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    <a className="btn btn-o" href={`/lire/${e.id}`} target="_blank" rel="noreferrer">Aperçu</a>
-                    <button className="btn btn-o" onClick={() => startEdit(e)}>Modifier</button>
-                    <button className="btn btn-d" onClick={() => del(e)}>Supprimer</button>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, color: "var(--blue-ink)", fontSize: 13.5 }}>{e.title}</div>
+                      <div style={{ color: "var(--muted)", fontSize: 12 }}>{e.date}{e.publishAt ? ` · sortie ${e.publishAt}` : ""}</div>
+                    </div>
+                    <button className="kebab" aria-label="Actions" onClick={(ev) => openMenu(ev, e)}><Icon name="dots" size={20} /></button>
                   </div>
                 </div>
               </div>
@@ -171,6 +196,15 @@ export default function Numeros() {
           </div>
         )}
       </div>
+
+      {menu && (
+        <div className="menu" style={{ left: menu.x, top: menu.top, bottom: menu.bottom }} onClick={(e) => e.stopPropagation()}>
+          <button onClick={() => { const id = menu.ed.id; setMenu(null); window.open(`/lire/${id}`, "_blank", "noopener"); }}>Aperçu</button>
+          <button onClick={() => { const ed = menu.ed; setMenu(null); startEdit(ed); }}>Modifier</button>
+          <hr />
+          <button className="danger" onClick={() => { const ed = menu.ed; setMenu(null); del(ed); }}>Supprimer</button>
+        </div>
+      )}
       {confirmDialog}
     </>
   );
