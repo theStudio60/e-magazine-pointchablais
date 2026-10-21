@@ -184,9 +184,9 @@ const HTML = `
   </div>
   <div class="wrap hero-in">
     <div class="fade">
-      <span class="eye">Abonnement numérique</span>
+      <span class="eye">Magazine mensuel · Abonnement numérique</span>
       <h1>__HERO__</h1>
-      <p>Toute votre actualité régionale, désormais en version numérique — à lire dès sa parution, sur tous vos écrans.</p>
+      <p>Votre magazine régional paraît <b>chaque mois</b> — toute l'actualité d'Aigle, Bex et environs, en version numérique, à lire dès sa parution sur tous vos écrans.</p>
     </div>
     <div class="cover-side fade" style="animation-delay:.15s">
       <div class="stage">
@@ -204,7 +204,7 @@ const HTML = `
 <section class="offres" id="offres">
   <p class="kick">Nos formules</p>
   <h2>Choisissez votre abonnement</h2>
-  <p class="sub">Le journal en version numérique, sans engagement. Résiliable à tout moment.</p>
+  <p class="sub">Un nouveau numéro chaque mois, en version numérique. Sans engagement, résiliable à tout moment.</p>
   <div class="grid" style="--gmax:__GRID_MAX__px">
 __OFFRES__
   </div>

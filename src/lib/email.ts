@@ -8,10 +8,11 @@ function transporter() {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
   if (!host || !user || !pass) return null;
+  const port = Number(process.env.SMTP_PORT || 587);
   _t = nodemailer.createTransport({
     host,
-    port: Number(process.env.SMTP_PORT || 465),
-    secure: String(process.env.SMTP_SECURE ?? "true") === "true",
+    port,
+    secure: port === 465, // 465 = SSL ; 587 = STARTTLS
     auth: { user, pass },
   });
   return _t;
@@ -22,15 +23,19 @@ type Mail = { to: string; subject: string; html: string; text?: string };
 export async function sendMail({ to, subject, html, text }: Mail) {
   const t = transporter();
   const from = process.env.MAIL_FROM || process.env.SMTP_USER || "no-reply@pointchablais.ch";
+
+  console.log(`[email] → tentative d'envoi à "${to}" — sujet: "${subject}"`);
+
   if (!t) {
-    console.warn("[email] SMTP non configuré — e-mail ignoré:", subject, "→", to);
+    console.warn(`[email] ⚠️ SMTP NON CONFIGURÉ — mail ignoré pour "${to}"`);
     return { ok: false, skipped: true };
   }
   try {
-    await t.sendMail({ from, to, subject, html, text: text || html.replace(/<[^>]+>/g, " ") });
-    return { ok: true };
+    const info = await t.sendMail({ from, to, subject, html, text: text || html.replace(/<[^>]+>/g, " ") });
+    console.log(`[email] ✅ ENVOYÉ à "${to}" — id: ${info.messageId}`);
+    return { ok: true, id: info.messageId };
   } catch (e) {
-    console.error("[email] échec envoi:", e);
+    console.error(`[email] ❌ ÉCHEC pour "${to}":`, e instanceof Error ? e.message : e);
     return { ok: false, error: String(e) };
   }
 }
@@ -66,5 +71,14 @@ export function passwordChangedEmail(name: string) {
     `<p style="line-height:1.6">Bonjour${name ? " " + name : ""},</p>
      <p style="line-height:1.6">Le mot de passe de votre compte vient d'être changé. Si vous êtes à l'origine de cette modification, aucune action n'est requise.</p>
      <p style="line-height:1.6;color:#b00020">Si ce n'est pas vous, contactez-nous immédiatement à abo@pointchablais.ch.</p>`
+  );
+}
+
+export function verifyCodeEmail(name: string, code: string) {
+  return layout(
+    `Bienvenue${name ? ", " + name : ""} !`,
+    `<p style="line-height:1.6">Pour activer votre compte, saisissez ce code de vérification :</p>
+     <p style="text-align:center;margin:24px 0"><span style="display:inline-block;font-size:30px;font-weight:800;letter-spacing:8px;color:#5b2a86;background:#f4ecf2;padding:14px 22px;border-radius:10px">${code}</span></p>
+     <p style="line-height:1.6;color:#555">Ce code est valable 15 minutes. Si vous n'êtes pas à l'origine de cette inscription, ignorez cet e-mail.</p>`
   );
 }
