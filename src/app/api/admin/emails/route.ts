@@ -1,64 +1,58 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
-import fs from "fs/promises";
-import path from "path";
 import { requireAdmin, safe } from "@/lib/admin";
-import { appUrl } from "@/lib/mailer";
+import { listUsers, listEmails, addEmail } from "@/lib/db";
+import { smtpEnabled, sendMail } from "@/lib/mailer";
 
 export const runtime = "nodejs";
 
-const MAX_BYTES = 2 * 1024 * 1024; // 2 Mo
-// Dossier de stockage (hors "public").
-const DIR = path.join(process.cwd(), "uploads", "emails");
-const TYPES: Record<string, string> = { png: "image/png", jpg: "image/jpeg", gif: "image/gif", webp: "image/webp" };
-
-// On détermine le vrai type d'après le contenu du fichier, pas d'après son nom.
-function detect(buf: Buffer): "png" | "jpg" | "gif" | "webp" | null {
-  if (buf.length > 12 && buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return "png";
-  if (buf.length > 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return "jpg";
-  if (buf.length > 6 && buf.subarray(0, 4).toString("ascii") === "GIF8") return "gif";
-  if (buf.length > 12 && buf.subarray(0, 4).toString("ascii") === "RIFF" && buf.subarray(8, 12).toString("ascii") === "WEBP") return "webp";
-  return null;
+// Enrobe le HTML de l'éditeur dans une mise en page e-mail propre.
+function wrapHtml(inner: string): string {
+  return `<!doctype html><html lang="fr"><body style="margin:0;background:#f4f6f6;font-family:Arial,Helvetica,sans-serif;color:#243138">
+  <div style="max-width:600px;margin:0 auto;padding:24px">
+    <div style="background:#fff;border:1px solid #e5e9ea;border-radius:12px;overflow:hidden">
+      <div style="background:#0e3f53;color:#fff;padding:18px 24px;font-weight:700;font-size:18px">Le Point Chablais</div>
+      <div style="padding:24px;font-size:15px;line-height:1.6">${inner}</div>
+      <div style="padding:16px 24px;background:#f4f6f6;color:#6a7d83;font-size:12px;border-top:1px solid #e5e9ea">Le Point Chablais — Aigle, Bex et environs</div>
+    </div>
+  </div></body></html>`;
 }
 
-// POST : envoi d'une image (réservé à l'admin).
+// GET : historique des campagnes.
+export async function GET() {
+  if (!(await requireAdmin())) return NextResponse.json({ error: "Interdit" }, { status: 403 });
+  return NextResponse.json({ emails: await listEmails() });
+}
+
+// POST : envoi d'une campagne (JSON : subject, body HTML, audience).
 export const POST = safe(async (req: Request) => {
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: "Interdit" }, { status: 403 });
 
-  const form = await req.formData().catch(() => null);
-  const file = form?.get("file");
-  if (!(file instanceof File)) return NextResponse.json({ error: "Aucun fichier reçu." }, { status: 400 });
-  if (file.size > MAX_BYTES) return NextResponse.json({ error: "Image trop lourde (2 Mo maximum)." }, { status: 413 });
+  const { subject, body, audience } = await req.json().catch(() => ({}));
+  if (!subject || !String(subject).trim()) return NextResponse.json({ error: "Le sujet est requis." }, { status: 400 });
+  if (!body || !String(body).trim()) return NextResponse.json({ error: "Le message est vide." }, { status: 400 });
 
-  const buf = Buffer.from(await file.arrayBuffer());
-  const ext = detect(buf);
-  if (!ext) return NextResponse.json({ error: "Format non accepté : utilisez une image JPG, PNG, GIF ou WebP." }, { status: 400 });
+  const aud = audience === "actifs" ? "actifs" : "tous";
+  const members = (await listUsers()).filter((u) => u.role !== "admin");
+  const recipients = aud === "actifs" ? members.filter((u) => u.status === "active") : members;
 
-  const name = crypto.randomBytes(16).toString("hex") + "." + ext;
-  await fs.mkdir(DIR, { recursive: true });
-  await fs.writeFile(path.join(DIR, name), buf);
-
-  const url = `${appUrl(new URL(req.url).origin)}/api/admin/emails/upload?f=${name}`;
-  return NextResponse.json({ ok: true, url });
-});
-
-// GET : affichage d'une image (public, pour les boîtes mail des abonnés).
-// Seuls les noms générés par l'envoi sont acceptés : aucun accès à d'autres fichiers.
-export async function GET(req: Request) {
-  const name = new URL(req.url).searchParams.get("f") || "";
-  const m = /^[a-f0-9]{32}\.(png|jpg|gif|webp)$/.exec(name);
-  if (!m) return new NextResponse("Not found", { status: 404 });
-  try {
-    const data = await fs.readFile(path.join(DIR, name));
-    return new NextResponse(new Uint8Array(data), {
-      headers: {
-        "Content-Type": TYPES[m[1]],
-        "Cache-Control": "public, max-age=31536000, immutable",
-        "X-Content-Type-Options": "nosniff",
-      },
-    });
-  } catch {
-    return new NextResponse("Not found", { status: 404 });
+  const html = wrapHtml(String(body));
+  let sentCount = 0;
+  if (smtpEnabled) {
+    for (const u of recipients) {
+      const ok = await sendMail(u.email, String(subject).trim(), html);
+      if (ok) sentCount++;
+    }
   }
-}
+
+  const email = await addEmail({
+    from: process.env.MAIL_FROM || process.env.SMTP_USER || "",
+    subject: String(subject).trim(),
+    body: String(body),
+    audience: aud,
+    count: recipients.length,
+    status: smtpEnabled ? "envoye" : "en_file",
+  });
+
+  return NextResponse.json({ ok: true, smtp: smtpEnabled, sent: sentCount, email });
+});

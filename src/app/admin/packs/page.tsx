@@ -24,6 +24,7 @@ const PACKS_CSS = `
   .pk tr{border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:12px;background:#fff}
   .pk td{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:7px 0;border:0}
   .pk td::before{content:attr(data-label);flex:0 0 100px;font-weight:600;font-size:12.5px;color:var(--muted)}
+  .pk td.txt{justify-content:flex-start}
   .pk td.name{width:100%}
   .pk td.name input{flex:1;min-width:0;width:100%}
   .pk td.price input{flex:1;min-width:0;width:100%}
@@ -133,9 +134,9 @@ export default function Packs() {
             <tbody>
               {packs.map((p, i) => (
                 <tr key={p.key}>
-                  <td data-label="Clé"><code>{p.key}</code></td>
+                  <td className="txt" data-label="Clé"><code>{p.key}</code></td>
                   <td className="name" data-label="Nom"><input type="text" value={p.name} onChange={(e) => upd(i, { name: e.target.value })} /></td>
-                  <td data-label="Période">{p.interval === "year" ? "annuel" : "mensuel"}</td>
+                  <td className="txt" data-label="Période">{p.interval === "year" ? "annuel" : "mensuel"}</td>
                   <td className="price" data-label="Prix (CHF)"><input type="number" min="0" step="0.5" value={p.price / 100} onChange={(e) => upd(i, { price: Math.round(Number(e.target.value) * 100) })} /></td>
                   <td data-label="Actif"><input type="checkbox" checked={p.active} onChange={(e) => upd(i, { active: e.target.checked })} /></td>
                   <td data-label="Recommandé"><input type="checkbox" checked={!!p.recommended} onChange={(e) => setRecommended(i, e.target.checked)} /></td>
