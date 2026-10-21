@@ -20,13 +20,12 @@ const EDITOR_CSS = `
 .rte-bar .sep{width:1px;background:#e5e9ea;margin:4px 4px}
 .rte-area{height:260px;min-height:260px;max-height:260px;overflow-y:auto;padding:14px 16px;font-size:15px;line-height:1.6;outline:0;resize:none;word-break:break-word}
 .rte-area:empty:before{content:attr(data-placeholder);color:#8a9aa0}
-.rte-area img{max-width:100%;height:auto;border-radius:6px}
+.rte-area img{max-width:100%;height:auto;border-radius:6px;cursor:pointer}
 .rte-area a{color:#1c6b8c;text-decoration:underline}
 .rte-area ul,.rte-area ol{padding-left:22px}
 .rte-hint{font-size:12.5px;color:#6a7d83;margin-top:6px}
 `;
 
-// Autorise uniquement des liens http(s) ou mailto, et des images en https/http.
 function safeUrl(u: string, allowMail: boolean): string | null {
   const s = u.trim();
   if (/^https?:\/\//i.test(s)) return s;
@@ -43,6 +42,7 @@ export default function Emails() {
   const [urlBar, setUrlBar] = useState<{ type: "link" | "image"; value: string } | null>(null);
   const [urlErr, setUrlErr] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [imgSel, setImgSel] = useState<HTMLImageElement | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -64,7 +64,6 @@ export default function Emails() {
     document.execCommand(cmd, false, value);
     saveSel();
   }
-  // Champ d'adresse intégré à l'éditeur (remplace la fenêtre popup du navigateur).
   function openUrlBar(type: "link" | "image") {
     saveSel();
     setUrlErr("");
@@ -81,7 +80,6 @@ export default function Emails() {
     }
     if (urlBar.type === "link") {
       exec("createLink", url);
-      // ouvre les liens dans un nouvel onglet
       editor.current?.querySelectorAll("a").forEach((a) => { a.setAttribute("target", "_blank"); a.setAttribute("rel", "noopener noreferrer"); });
     } else {
       exec("insertImage", url);
@@ -89,7 +87,6 @@ export default function Emails() {
     setUrlBar(null);
     setUrlErr("");
   }
-  // Envoi d'une image depuis l'ordinateur, puis insertion dans le message.
   async function uploadFile(file: File) {
     setUrlErr("");
     if (file.size > 2 * 1024 * 1024) { setUrlErr("Image trop lourde (2 Mo maximum)."); return; }
@@ -111,7 +108,25 @@ export default function Emails() {
   }
   const addLink = () => openUrlBar("link");
   const addImage = () => openUrlBar("image");
-  // Coller en texte brut : évite d'importer des styles parasites (Word, sites web…).
+
+  // Redimensionne l'image sélectionnée (inscrit la taille dans l'image → respectée dans l'e-mail).
+  function setImgWidth(w: string) {
+    if (!imgSel) return;
+    imgSel.style.width = w;
+    imgSel.style.height = "auto";
+    imgSel.style.maxWidth = "100%";
+    imgSel.style.display = "block";
+  }
+  // Sélectionne l'image cliquée (contour visuel) ou désélectionne.
+  function onEditorClick(e: React.MouseEvent<HTMLDivElement>) {
+    const el = e.target as HTMLElement;
+    editor.current?.querySelectorAll("img").forEach((im) => (im.style.outline = ""));
+    if (el.tagName === "IMG") {
+      (el as HTMLImageElement).style.outline = "2px solid #9c6b91";
+      setImgSel(el as HTMLImageElement);
+    } else setImgSel(null);
+  }
+
   function onPaste(e: React.ClipboardEvent<HTMLDivElement>) {
     e.preventDefault();
     const text = e.clipboardData.getData("text/plain");
@@ -123,6 +138,9 @@ export default function Emails() {
     const f = new FormData(e.currentTarget);
     const form = e.currentTarget;
     const el = editor.current;
+    // Retire le contour de sélection avant d'envoyer (ne doit pas finir dans le mail).
+    el?.querySelectorAll("img").forEach((im) => (im.style.outline = ""));
+    setImgSel(null);
     const html = el?.innerHTML.trim() || "";
     const hasContent = !!el && (el.textContent?.trim() || el.querySelector("img"));
     if (!hasContent) { setMsg({ t: "Le message est vide.", ok: false }); return; }
@@ -163,6 +181,15 @@ export default function Emails() {
                 <span className="sep" />
                 <button type="button" title="Effacer la mise en forme" onClick={() => exec("removeFormat")}>Effacer</button>
               </div>
+              {imgSel && (
+                <div className="rte-url" style={{ background: "#eef5f7" }}>
+                  <span>Taille de l&apos;image</span>
+                  <button type="button" className="ok" onClick={() => setImgWidth("160px")}>Petite</button>
+                  <button type="button" className="ok" onClick={() => setImgWidth("320px")}>Moyenne</button>
+                  <button type="button" className="ok" onClick={() => setImgWidth("100%")}>Pleine largeur</button>
+                  <button type="button" className="cancel" onClick={() => { if (imgSel) imgSel.style.outline = ""; setImgSel(null); }}>Fermer</button>
+                </div>
+              )}
               {urlBar && (
                 <div className="rte-url">
                   {urlBar.type === "image" && (
@@ -213,9 +240,10 @@ export default function Emails() {
                 onMouseUp={saveSel}
                 onBlur={saveSel}
                 onPaste={onPaste}
+                onClick={onEditorClick}
               />
             </div>
-            <div className="rte-hint">Sélectionnez du texte puis cliquez sur « G » pour le mettre en gras. Les images (JPG, PNG, GIF, WebP, 2 Mo max) s'envoient depuis votre ordinateur.</div>
+            <div className="rte-hint">Astuce : cliquez sur une image insérée pour choisir sa taille (Petite / Moyenne / Pleine largeur). Images JPG, PNG, GIF, WebP, 2 Mo max.</div>
           </div>
           <button className="btn btn-b" type="submit">Envoyer</button>
         </form>
