@@ -138,8 +138,8 @@ export default function Packs() {
                   <td className="name" data-label="Nom"><input type="text" value={p.name} onChange={(e) => upd(i, { name: e.target.value })} /></td>
                   <td className="txt" data-label="Période">{p.interval === "year" ? "annuel" : "mensuel"}</td>
                   <td className="price" data-label="Prix (CHF)"><input type="number" min="0" step="0.5" value={p.price / 100} onChange={(e) => upd(i, { price: Math.round(Number(e.target.value) * 100) })} /></td>
-                  <td data-label="Actif"><input type="checkbox" checked={p.active} onChange={(e) => upd(i, { active: e.target.checked })} /></td>
-                  <td data-label="Recommandé"><input type="checkbox" checked={!!p.recommended} onChange={(e) => setRecommended(i, e.target.checked)} /></td>
+                  <td className="txt" data-label="Actif"><input type="checkbox" checked={p.active} onChange={(e) => upd(i, { active: e.target.checked })} /></td>
+                  <td className="txt" data-label="Recommandé"><input type="checkbox" checked={!!p.recommended} onChange={(e) => setRecommended(i, e.target.checked)} /></td>
                   <td className="act"><button className="btn btn-d" type="button" onClick={() => removePack(i)}><Icon name="trash" size={16} /> Supprimer</button></td>
                 </tr>
               ))}

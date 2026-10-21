@@ -36,7 +36,9 @@ export const POST = safe(async (req: Request) => {
   const members = (await listUsers()).filter((u) => u.role !== "admin");
   const recipients = aud === "actifs" ? members.filter((u) => u.status === "active") : members;
 
-  const html = wrapHtml(String(body));
+  // Images responsives : elles ne débordent jamais la largeur du message.
+  const safeBody = String(body).replace(/<img(?![^>]*\bstyle=)/gi, '<img style="max-width:100%;height:auto;display:block;border-radius:6px"');
+  const html = wrapHtml(safeBody);
   let sentCount = 0;
   if (smtpEnabled) {
     for (const u of recipients) {
