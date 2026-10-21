@@ -42,7 +42,7 @@ export async function POST(req: Request) {
         currency: "chf",
         unit_amount: pack.price,
         recurring: { interval: pack.interval },
-        product_data: { name: `Abonnement ${pack.name} — Le Point Chablais` },
+        product_data: { name: `Abonnement ${pack.name}- Le Point Chablais` },
       },
       quantity: 1,
     };

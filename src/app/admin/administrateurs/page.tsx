@@ -57,7 +57,7 @@ export default function Administrateurs() {
         <div className="msg ok">Administrateur créé. Un e-mail a été envoyé à <b>{created.email}</b> pour qu&apos;il choisisse son mot de passe.</div>
       ) : (
         <div className="msg ok">
-          Administrateur créé : <b>{created.email}</b>. L&apos;e-mail n&apos;a pas pu être envoyé (SMTP non configuré ou erreur d&apos;envoi) — mot de passe temporaire : <b>{created.pwd}</b>
+          Administrateur créé : <b>{created.email}</b>. L&apos;e-mail n&apos;a pas pu être envoyé (SMTP non configuré ou erreur d&apos;envoi)- mot de passe temporaire : <b>{created.pwd}</b>
         </div>
       ))}
       <div className="card">

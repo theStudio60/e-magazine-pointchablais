@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 
   const sent = await sendMail({
     to: email,
-    subject: "Votre code de vérification — Le Point Chablais",
+    subject: "Votre code de vérification - Le Point Chablais",
     html: verifyCodeEmail(String(name).trim(), code),
   });
 

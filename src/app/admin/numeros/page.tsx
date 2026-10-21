@@ -99,7 +99,7 @@ export default function Numeros() {
   async function del(ed: Ed) {
     const ok = await confirm({
       title: "Supprimer ce numéro ?",
-      message: <><b>{ed.title} — {ed.date}</b> et son PDF seront supprimés définitivement.</>,
+      message: <><b>{ed.title} - {ed.date}</b> et son PDF seront supprimés définitivement.</>,
       confirmLabel: "Supprimer",
       danger: true,
     });

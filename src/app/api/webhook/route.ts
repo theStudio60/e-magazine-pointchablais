@@ -91,7 +91,7 @@ export async function POST(req: Request) {
             status: "paye",
           });
           if (created) {
-            await addLog(u0.email, "Paiement reçu", `Abonnement ${plan} — facture ${invId}`);
+            await addLog(u0.email, "Paiement reçu", `Abonnement ${plan}- facture ${invId}`);
             const m = mails.paymentReceived(u0.name, plan, amount, end, espace);
             await sendMail(u0.email, m.subject, m.html);
           }
@@ -142,7 +142,7 @@ export async function POST(req: Request) {
           status: "paye",
         });
         if (created) {
-          await addLog(u.email, "Paiement reçu", `Abonnement ${plan} — facture ${inv.number || inv.id}`);
+          await addLog(u.email, "Paiement reçu", `Abonnement ${plan}- facture ${inv.number || inv.id}`);
           const m = mails.paymentReceived(u.name, plan, inv.amount_paid ?? inv.total ?? 0, end, espace);
           await sendMail(u.email, m.subject, m.html);
         }
@@ -154,7 +154,7 @@ export async function POST(req: Request) {
       const inv = event.data.object as Stripe.Invoice;
       const u = await getUserByStripeCustomer(inv.customer as string);
       if (u) {
-        await addLog(u.email, "Paiement échoué", `Tentative refusée — Stripe va réessayer (facture ${inv.number || inv.id})`);
+        await addLog(u.email, "Paiement échoué", `Tentative refusée- Stripe va réessayer (facture ${inv.number || inv.id})`);
         // Un seul e-mail par facture (Stripe réessaie plusieurs fois).
         if ((inv.attempt_count ?? 1) <= 1) {
           const m = mails.paymentFailed(u.name, espace);

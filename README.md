@@ -1,4 +1,4 @@
-# Portail d'abonnement — Le Point Chablais
+# Portail d'abonnement- Le Point Chablais
 
 Portail numérique **complet** (Next.js 16 + TypeScript), séparé du site vitrine WordPress.
 Destiné à **abo.pointchablais.ch**. Design maison (CSS), police Poppins.
@@ -13,14 +13,14 @@ Destiné à **abo.pointchablais.ch**. Design maison (CSS), police Poppins.
 - PDF protégés (réservés aux abonnés actifs) + génération de factures
 - Pages légales : Conditions de vente / d'abonnement / Confidentialité (modèles à faire valider)
 
-## Back-office `/admin` (réservé au rôle admin) — menu latéral
+## Back-office `/admin` (réservé au rôle admin)- menu latéral
 - **Tableau de bord** : membres, abonnements actifs, revenu encaissé, paiements en attente + membres/factures récents
 - **Membres** : recherche, filtre par statut, **pagination**, activer/désactiver, changer la formule, supprimer, **créer/inviter** un membre (mot de passe temporaire), **export CSV**
 - **Abonnements** : liste des actifs + résiliation
 - **Factures** : liste + recherche, marquer payé / en attente, total encaissé
 - **Packs** : gérer les offres (nom, prix, actif, recommandé) → répercutés sur la landing + le paiement
 - **Numéros (PDF)** : uploader un numéro (PDF + couverture + date de sortie), supprimer
-- **Emails** : campagnes aux abonnés (tous / actifs) — nécessite un SMTP en prod (`SMTP_URL`), sinon enregistré en file
+- **Emails** : campagnes aux abonnés (tous / actifs)- nécessite un SMTP en prod (`SMTP_URL`), sinon enregistré en file
 - **Administrateurs** : lister, ajouter, retirer les droits admin
 - **Logs d'activité** : historique des actions admin
 - **Rapports** : synthèse + taux d'abonnés + export CSV
@@ -57,8 +57,8 @@ knexfile.cjs          configuration Knex
    ```
 
 ### Comptes de démo (après `db:seed`)
-> **Administrateur** — `admin@pointchablais.ch` / `Admin2026` → `/admin`
-> **Abonné (actif)** — `demo@pointchablais.ch` / `Chablais2026`
+> **Administrateur**- `admin@pointchablais.ch` / `Admin2026` → `/admin`
+> **Abonné (actif)**- `demo@pointchablais.ch` / `Chablais2026`
 
 ## Au quotidien
 Après un `git pull`, **`npm run dev` suffit** : les migrations en attente sont appliquées automatiquement.

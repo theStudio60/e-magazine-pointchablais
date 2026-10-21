@@ -91,7 +91,7 @@ function layout(title: string, body: string, cta?: { label: string; url: string 
 ${button}
 </td></tr>
 <tr><td style="padding:18px 28px;background:#0e3f53;color:#bcd3da;font-size:12px;line-height:1.5">
-Le Point Chablais — Aigle, Bex et environs<br>Vous recevez cet e-mail en lien avec votre compte abonné.
+Le Point Chablais - Aigle, Bex et environs<br>Vous recevez cet e-mail en lien avec votre compte abonné.
 </td></tr>
 </table></td></tr></table></body></html>`;
 }
@@ -118,7 +118,7 @@ export const mails = {
 
   paymentReceived(name: string, plan: string, amount: number, periodEnd: string | null, url: string) {
     return {
-      subject: "Paiement reçu — merci !",
+      subject: "Paiement reçu - merci !",
       html: layout(
         "Merci, votre paiement est confirmé",
         `${hello(name)}<p>Nous avons bien reçu votre paiement de <b>${chf(amount)}</b> pour votre abonnement <b>${esc(plan)}</b> au Point Chablais.</p>

@@ -1,6 +1,6 @@
 import LegalLayout from "@/components/legal-layout";
 
-export const metadata = { title: "Conditions de vente — Le Point Chablais" };
+export const metadata = { title: "Conditions de vente- Le Point Chablais" };
 
 export default function Page() {
   return (

@@ -53,7 +53,7 @@ const HTML = `
   .stage .mag{width:100%;border-radius:6px;display:block;
     box-shadow:0 40px 70px -24px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.08);
     transform:rotate(-4deg);animation:floatCover 7s ease-in-out infinite}
-  /* phone mockup — le magazine dans la poche */
+  /* phone mockup- le magazine dans la poche */
   .phone{position:absolute;right:-38px;bottom:-34px;width:34%;aspect-ratio:9/19;
     background:#0e1418;border-radius:22px;padding:7px;
     box-shadow:0 26px 48px -18px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.12);
@@ -186,7 +186,7 @@ const HTML = `
     <div class="fade">
       <span class="eye">Magazine mensuel · Abonnement numérique</span>
       <h1>__HERO__</h1>
-      <p>Votre magazine régional paraît <b>chaque mois</b> — toute l'actualité d'Aigle, Bex et environs, en version numérique, à lire dès sa parution sur tous vos écrans.</p>
+      <p>Votre magazine régional paraît <b>chaque mois</b>- toute l'actualité d'Aigle, Bex et environs, en version numérique, à lire dès sa parution sur tous vos écrans.</p>
     </div>
     <div class="cover-side fade" style="animation-delay:.15s">
       <div class="stage">

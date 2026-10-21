@@ -24,7 +24,7 @@ export default function Factures() {
   return (
     <>
       <h1 className="t">Factures</h1>
-      <p className="sub">{rows.length} facture(s) — total encaissé : CHF {total.toFixed(2)}</p>
+      <p className="sub">{rows.length} facture(s)- total encaissé : CHF {total.toFixed(2)}</p>
       {err && <div className="msg err">{err}</div>}
       <div className="toolbar">
         <input className="grow" type="text" placeholder="Rechercher (n°, nom, e-mail)…" value={q} onChange={(e) => setQ(e.target.value)} style={{ maxWidth: 340 }} />

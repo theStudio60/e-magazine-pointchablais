@@ -24,15 +24,15 @@ export async function sendMail({ to, subject, html, text }: Mail) {
   const t = transporter();
   const from = process.env.MAIL_FROM || process.env.SMTP_USER || "no-reply@pointchablais.ch";
 
-  console.log(`[email] → tentative d'envoi à "${to}" — sujet: "${subject}"`);
+  console.log(`[email] → tentative d'envoi à "${to}"- sujet: "${subject}"`);
 
   if (!t) {
-    console.warn(`[email] ⚠️ SMTP NON CONFIGURÉ — mail ignoré pour "${to}"`);
+    console.warn(`[email] ⚠️ SMTP NON CONFIGURÉ- mail ignoré pour "${to}"`);
     return { ok: false, skipped: true };
   }
   try {
     const info = await t.sendMail({ from, to, subject, html, text: text || html.replace(/<[^>]+>/g, " ") });
-    console.log(`[email] ✅ ENVOYÉ à "${to}" — id: ${info.messageId}`);
+    console.log(`[email] ✅ ENVOYÉ à "${to}"- id: ${info.messageId}`);
     return { ok: true, id: info.messageId };
   } catch (e) {
     console.error(`[email] ❌ ÉCHEC pour "${to}":`, e instanceof Error ? e.message : e);
@@ -50,7 +50,7 @@ function layout(title: string, body: string) {
         ${body}
       </div>
       <div style="padding:18px 28px;border-top:1px solid #eee;font-size:12px;color:#888">
-        Magazine régional — Aigle, Bex et environs · abo.pointchablais.ch
+        Magazine régional- Aigle, Bex et environs · abo.pointchablais.ch
       </div>
     </div>
   </div></body></html>`;

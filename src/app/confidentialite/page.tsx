@@ -1,12 +1,12 @@
 import LegalLayout from "@/components/legal-layout";
 
-export const metadata = { title: "Politique de confidentialité — Le Point Chablais" };
+export const metadata = { title: "Politique de confidentialité- Le Point Chablais" };
 
 export default function Page() {
   return (
     <LegalLayout title="Politique de confidentialité">
       <h2>1. Responsable du traitement</h2>
-      <p>Le Point Chablais, Rue Centrale 9, 1892 Lavey-Village, Suisse — abo@pointchablais.ch. Le traitement des données respecte la loi fédérale sur la protection des données (nLPD).</p>
+      <p>Le Point Chablais, Rue Centrale 9, 1892 Lavey-Village, Suisse- abo@pointchablais.ch. Le traitement des données respecte la loi fédérale sur la protection des données (nLPD).</p>
 
       <h2>2. Données collectées</h2>
       <p>Nous collectons les données nécessaires à la gestion de votre abonnement : nom, adresse e-mail, adresse postale (facultative) et informations d&apos;abonnement. Les données de paiement sont traitées par notre prestataire (Stripe) et ne sont pas conservées par nos soins.</p>

@@ -154,7 +154,7 @@ export default function Membres() {
       {msg && <div className={"msg " + (msg.ok ? "ok" : "err")}>{msg.t}</div>}
       {created && (
         <div className="msg ok">
-          Membre créé : <b>{created.email}</b> — mot de passe temporaire : <b>{created.pwd}</b> (à communiquer ; il pourra le changer).
+          Membre créé : <b>{created.email}</b>- mot de passe temporaire : <b>{created.pwd}</b> (à communiquer ; il pourra le changer).
         </div>
       )}
 

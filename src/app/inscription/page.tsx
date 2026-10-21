@@ -40,7 +40,7 @@ export default function Inscription() {
       const d = await r.json();
       if (!r.ok) { setErr(d.error || "Erreur lors de la création du compte."); setLoading(false); return; }
       setStep("verify");
-      setInfo(d.mailSent ? "" : "L'e-mail n'a pas pu être envoyé — vérifiez votre adresse puis réessayez.");
+      setInfo(d.mailSent ? "" : "L'e-mail n'a pas pu être envoyé - vérifiez votre adresse puis réessayez.");
       setLoading(false);
     } catch {
       setErr("Erreur réseau, réessayez."); setLoading(false);
@@ -176,7 +176,7 @@ export default function Inscription() {
                       placeholder="123456"
                       value={code}
                       onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                      style={{ letterSpacing: "6px", fontSize: 18, fontWeight: 700 }}
+                      style={{ letterSpacing: "6px", fontSize: 16, fontWeight: 200 }}
                       required
                     />
                   </div>

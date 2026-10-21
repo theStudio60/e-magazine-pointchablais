@@ -12,7 +12,7 @@ function wrapHtml(inner: string): string {
     <div style="background:#fff;border:1px solid #e5e9ea;border-radius:12px;overflow:hidden">
       <div style="background:#0e3f53;color:#fff;padding:18px 24px;font-weight:700;font-size:18px">Le Point Chablais</div>
       <div style="padding:24px;font-size:15px;line-height:1.6">${inner}</div>
-      <div style="padding:16px 24px;background:#f4f6f6;color:#6a7d83;font-size:12px;border-top:1px solid #e5e9ea">Le Point Chablais — Aigle, Bex et environs</div>
+      <div style="padding:16px 24px;background:#f4f6f6;color:#6a7d83;font-size:12px;border-top:1px solid #e5e9ea">Le Point Chablais- Aigle, Bex et environs</div>
     </div>
   </div></body></html>`;
 }

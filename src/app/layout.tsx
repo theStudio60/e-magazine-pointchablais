@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Le Point Chablais — Abonnement numérique",
+  title: "Le Point Chablais- Abonnement numérique",
   description: "Toute l'actualité d'Aigle, Bex et environs, en version numérique.",
 };
 

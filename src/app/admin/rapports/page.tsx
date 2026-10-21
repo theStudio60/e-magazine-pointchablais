@@ -65,7 +65,7 @@ function Chart({ keys, group, series, kind, label }: { keys: string[]; group: st
         series.map((s) =>
           s.values.map((v, i) => (
             <rect key={s.name + i} x={xb(i) - barW / 2} y={y(v)} width={barW} height={Math.max(0, T + ph - y(v))} rx="3" fill={s.color}>
-              <title>{`${labelOf(keys[i], group)} — ${s.name} : ${num(v)}`}</title>
+              <title>{`${labelOf(keys[i], group)}- ${s.name} : ${num(v)}`}</title>
             </rect>
           ))
         )}
@@ -76,7 +76,7 @@ function Chart({ keys, group, series, kind, label }: { keys: string[]; group: st
             {n <= 31 &&
               s.values.map((v, i) => (
                 <circle key={i} cx={xl(i)} cy={y(v)} r="3.5" fill={s.color}>
-                  <title>{`${labelOf(keys[i], group)} — ${s.name} : ${num(v)}`}</title>
+                  <title>{`${labelOf(keys[i], group)}- ${s.name} : ${num(v)}`}</title>
                 </circle>
               ))}
           </g>

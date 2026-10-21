@@ -59,7 +59,7 @@ export const POST = safe(async (req: Request) => {
 
   clearEditionCache(ed.id);
   prerenderEdition(ed.id).catch((e) => console.error("[liseuse] pré-rendu", ed.id, e));
-  await addLog(admin.email, "Numéro ajouté", `${ed.title} — ${ed.date}${publishAt ? ` (sortie ${publishAt})` : ""}`);
+  await addLog(admin.email, "Numéro ajouté", `${ed.title}- ${ed.date}${publishAt ? ` (sortie ${publishAt})` : ""}`);
   return NextResponse.json({ ok: true, edition: ed });
 });
 
@@ -85,7 +85,7 @@ export const PATCH = safe(async (req: Request) => {
   const ed = await updateEdition(id, { date, title, publishAt });
   if (!ed) return NextResponse.json({ error: "Numéro introuvable." }, { status: 404 });
 
-  await addLog(admin.email, "Numéro modifié", `${ed.title} — ${ed.date}${publishAt ? ` (sortie ${publishAt})` : ""}`);
+  await addLog(admin.email, "Numéro modifié", `${ed.title}- ${ed.date}${publishAt ? ` (sortie ${publishAt})` : ""}`);
   return NextResponse.json({ ok: true, edition: ed });
 });
 
