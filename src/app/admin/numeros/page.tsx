@@ -12,6 +12,8 @@ const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").t
 
 export default function Numeros() {
   const [eds, setEds] = useState<Ed[]>([]);
+  const [trash, setTrash] = useState<Ed[]>([]);
+  const [trashOpen, setTrashOpen] = useState(false);
   const { confirm, confirmDialog } = useConfirm();
   const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -27,13 +29,16 @@ export default function Numeros() {
   const editRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
-    const r = await fetch("/api/admin/editions");
-    if (r.ok) setEds((await r.json()).editions);
+    const [r1, r2] = await Promise.all([
+      fetch("/api/admin/editions"),
+      fetch("/api/admin/editions?trash=1"),
+    ]);
+    if (r1.ok) setEds((await r1.json()).editions);
+    if (r2.ok) setTrash((await r2.json()).editions);
   }, []);
   useEffect(() => { load(); }, [load]);
   function flash(t: string, ok = true) { setMsg({ t, ok }); setTimeout(() => setMsg(null), 4000); }
 
-  // Ferme le menu ⋮ (clic ailleurs, défilement, Échap).
   useEffect(() => {
     if (!menu) return;
     const close = () => setMenu(null);
@@ -98,18 +103,35 @@ export default function Numeros() {
 
   async function del(ed: Ed) {
     const ok = await confirm({
-      title: "Supprimer ce numéro ?",
-      message: <><b>{ed.title} - {ed.date}</b> et son PDF seront supprimés définitivement.</>,
-      confirmLabel: "Supprimer",
+      title: "Mettre ce numéro à la corbeille ?",
+      message: <><b>{ed.title} — {ed.date}</b> sera retiré des abonnés. Vous pourrez le <b>restaurer</b> depuis la corbeille.</>,
+      confirmLabel: "Mettre à la corbeille",
       danger: true,
     });
     if (!ok) return;
     const r = await call(`/api/admin/editions?id=${ed.id}`, { method: "DELETE" });
     if (r.ok) {
-      flash("Numéro supprimé.");
+      flash("Numéro mis à la corbeille.");
       if (editing?.id === ed.id) setEditing(null);
       load();
     } else flash(r.error, false);
+  }
+
+  async function restore(ed: Ed) {
+    const r = await postJson("/api/admin/editions", { id: ed.id, restore: true }, "PATCH");
+    if (r.ok) { flash("Numéro restauré."); load(); } else flash(r.error, false);
+  }
+
+  async function hardDelete(ed: Ed) {
+    const ok = await confirm({
+      title: "Supprimer définitivement ?",
+      message: <><b>{ed.title} — {ed.date}</b> et son PDF seront supprimés <b>définitivement</b>. Cette action est irréversible.</>,
+      confirmLabel: "Supprimer définitivement",
+      danger: true,
+    });
+    if (!ok) return;
+    const r = await call(`/api/admin/editions?id=${ed.id}&permanent=1`, { method: "DELETE" });
+    if (r.ok) { flash("Numéro supprimé définitivement."); load(); } else flash(r.error, false);
   }
 
   function openMenu(e: React.MouseEvent<HTMLButtonElement>, ed: Ed) {
@@ -196,6 +218,40 @@ export default function Numeros() {
           </div>
         )}
       </div>
+
+      {trash.length > 0 && (
+        <div className="card">
+          <div
+            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, cursor: "pointer" }}
+            onClick={() => setTrashOpen((o) => !o)}
+          >
+            <h2 style={{ margin: 0 }}>Corbeille ({trash.length})</h2>
+            <button className="btn btn-o" type="button">{trashOpen ? "Masquer" : "Afficher"}</button>
+          </div>
+          {trashOpen && (
+            <>
+              <p style={{ color: "var(--muted)", fontSize: 13.5, margin: "14px 0" }}>
+                Numéros supprimés. Restaurez-les pour les remettre en ligne, ou supprimez-les définitivement.
+              </p>
+              <div className="eds">
+                {trash.map((e) => (
+                  <div className="edc" key={e.id} style={{ opacity: 0.9 }}>
+                    <img src={`/api/cover/${e.id}`} alt="" onError={(ev) => { (ev.currentTarget as HTMLImageElement).style.visibility = "hidden"; }} />
+                    <div className="b">
+                      <div style={{ fontWeight: 600, color: "var(--blue-ink)", fontSize: 13.5 }}>{e.title}</div>
+                      <div style={{ color: "var(--muted)", fontSize: 12, marginBottom: 10 }}>{e.date}</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <button className="btn btn-b" style={{ width: "100%", justifyContent: "center" }} onClick={() => restore(e)}>Restaurer</button>
+                        <button className="btn btn-d" style={{ width: "100%", justifyContent: "center", fontSize: 13 }} onClick={() => hardDelete(e)}>Supprimer définitivement</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {menu && (
         <div className="menu" style={{ left: menu.x, top: menu.top, bottom: menu.bottom }} onClick={(e) => e.stopPropagation()}>

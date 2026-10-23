@@ -3,12 +3,15 @@ import fs from "fs";
 import { EDITIONS_DIR, COVERS_DIR, editionPdfPath, coverPath } from "@/lib/storage";
 import { prerenderEdition, clearEditionCache } from "@/lib/pdf-render";
 import { requireAdmin, safe } from "@/lib/admin";
-import { addEdition, removeEdition, updateEdition, getSettings, addLog } from "@/lib/db";
+import { addEdition, removeEdition, updateEdition, softDeleteEdition, restoreEdition, listDeletedEditions, getSettings, addLog } from "@/lib/db";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(req: Request) {
   if (!(await requireAdmin())) return NextResponse.json({ error: "Interdit" }, { status: 403 });
+  if (new URL(req.url).searchParams.get("trash")) {
+    return NextResponse.json({ editions: await listDeletedEditions() });
+  }
   return NextResponse.json({ editions: (await getSettings()).editions });
 }
 
@@ -59,7 +62,7 @@ export const POST = safe(async (req: Request) => {
 
   clearEditionCache(ed.id);
   prerenderEdition(ed.id).catch((e) => console.error("[liseuse] pré-rendu", ed.id, e));
-  await addLog(admin.email, "Numéro ajouté", `${ed.title}- ${ed.date}${publishAt ? ` (sortie ${publishAt})` : ""}`);
+  await addLog(admin.email, "Numéro ajouté", `${ed.title} — ${ed.date}${publishAt ? ` (sortie ${publishAt})` : ""}`);
   return NextResponse.json({ ok: true, edition: ed });
 });
 
@@ -68,14 +71,19 @@ export const PATCH = safe(async (req: Request) => {
   if (!admin) return NextResponse.json({ error: "Interdit" }, { status: 403 });
 
   const body = (await req.json().catch(() => ({}))) as {
-    id?: string;
-    date?: string;
-    title?: string;
-    publishAt?: string | null;
+    id?: string; date?: string; title?: string; publishAt?: string | null; restore?: boolean;
   };
-
   const id = String(body.id || "");
   if (!/^ed\d+$/.test(id)) return NextResponse.json({ error: "Id invalide" }, { status: 400 });
+
+  // Restauration depuis la corbeille.
+  if (body.restore) {
+    const ok = await restoreEdition(id);
+    if (!ok) return NextResponse.json({ error: "Numéro introuvable." }, { status: 404 });
+    clearEditionCache(id);
+    await addLog(admin.email, "Numéro restauré", id);
+    return NextResponse.json({ ok: true });
+  }
 
   const date = String(body.date || "").trim();
   if (!date) return NextResponse.json({ error: "La période est requise (ex. « Octobre 2026 »)." }, { status: 400 });
@@ -84,20 +92,30 @@ export const PATCH = safe(async (req: Request) => {
 
   const ed = await updateEdition(id, { date, title, publishAt });
   if (!ed) return NextResponse.json({ error: "Numéro introuvable." }, { status: 404 });
-
-  await addLog(admin.email, "Numéro modifié", `${ed.title}- ${ed.date}${publishAt ? ` (sortie ${publishAt})` : ""}`);
+  await addLog(admin.email, "Numéro modifié", `${ed.title} — ${ed.date}${publishAt ? ` (sortie ${publishAt})` : ""}`);
   return NextResponse.json({ ok: true, edition: ed });
 });
 
 export const DELETE = safe(async (req: Request) => {
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: "Interdit" }, { status: 403 });
-  const id = new URL(req.url).searchParams.get("id") || "";
+  const sp = new URL(req.url).searchParams;
+  const id = sp.get("id") || "";
   if (!/^ed\d+$/.test(id)) return NextResponse.json({ error: "Id invalide" }, { status: 400 });
-  await removeEdition(id);
-  await addLog(admin.email, "Numéro supprimé", id);
-  try { fs.unlinkSync(editionPdfPath(id)); } catch {}
+
+  // Suppression définitive (depuis la corbeille) : ligne + fichiers supprimés.
+  if (sp.get("permanent")) {
+    await removeEdition(id);
+    try { fs.unlinkSync(editionPdfPath(id)); } catch {}
+    try { fs.unlinkSync(coverPath(id)); } catch {}
+    clearEditionCache(id);
+    await addLog(admin.email, "Numéro supprimé définitivement", id);
+    return NextResponse.json({ ok: true });
+  }
+
+  // Suppression normale : mise en corbeille (fichiers conservés pour restauration).
+  await softDeleteEdition(id);
   clearEditionCache(id);
-  try { fs.unlinkSync(coverPath(id)); } catch {}
+  await addLog(admin.email, "Numéro mis en corbeille", id);
   return NextResponse.json({ ok: true });
 });

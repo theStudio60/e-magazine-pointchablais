@@ -291,11 +291,41 @@ async function listPacks(): Promise<Pack[]> {
   const rows = await select<PackRow>("SELECT * FROM packs ORDER BY sort_order ASC, `key` ASC");
   return rows.map(toPack);
 }
+// Corbeille : les numéros supprimés sont marqués (deleted_at) au lieu d'être effacés.
+// La colonne est créée automatiquement au premier appel — aucune migration manuelle.
+let _edMigrated = false;
+async function ensureEditionsSchema(): Promise<void> {
+  if (_edMigrated) return;
+  try { await run("ALTER TABLE editions ADD COLUMN IF NOT EXISTS deleted_at DATETIME NULL"); } catch {}
+  _edMigrated = true;
+}
+
 async function listEditions(): Promise<Edition[]> {
+  await ensureEditionsSchema();
   const rows = await select<EditionRow>(
-    "SELECT id, date_label, title, publish_at FROM editions WHERE id IS NOT NULL ORDER BY position ASC, seq DESC",
+    "SELECT id, date_label, title, publish_at FROM editions WHERE id IS NOT NULL AND deleted_at IS NULL ORDER BY position ASC, seq DESC",
   );
   return rows.map(toEdition);
+}
+
+export async function listDeletedEditions(): Promise<Edition[]> {
+  await ensureEditionsSchema();
+  const rows = await select<EditionRow>(
+    "SELECT id, date_label, title, publish_at FROM editions WHERE id IS NOT NULL AND deleted_at IS NOT NULL ORDER BY deleted_at DESC",
+  );
+  return rows.map(toEdition);
+}
+
+export async function softDeleteEdition(id: string): Promise<boolean> {
+  await ensureEditionsSchema();
+  const res = await run("UPDATE editions SET deleted_at = NOW() WHERE id = ? AND deleted_at IS NULL", [id]);
+  return res.affectedRows > 0;
+}
+
+export async function restoreEdition(id: string): Promise<boolean> {
+  await ensureEditionsSchema();
+  const res = await run("UPDATE editions SET deleted_at = NULL WHERE id = ?", [id]);
+  return res.affectedRows > 0;
 }
 async function getSite(): Promise<Site> {
   const rows = await select<RowDataPacket & { v: string | Site }>("SELECT v FROM settings WHERE k = 'site'");
