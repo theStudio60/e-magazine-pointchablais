@@ -71,7 +71,7 @@ const HTML = `
   @keyframes floatPhone{0%,100%{transform:rotate(5deg) translateY(0)}50%{transform:rotate(5deg) translateY(-12px)}}
   @keyframes floatPill{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
   @keyframes pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.6);opacity:0}}
-  @media(max-width:880px){.phone{right:-14px;bottom:-24px}.pill{left:-8px}}
+  @media(max-width:880px){.phone{right:-14px;bottom:-24px}.pill{left:-8px}.cover-side{margin-top:30px}}
   .hero{margin-bottom:-1px}
   .wave{display:block;width:100%;height:auto;margin-top:-1px;margin-bottom:-2px}
 
