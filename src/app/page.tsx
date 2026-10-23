@@ -139,7 +139,7 @@ const HTML = `
 
   /* footer */
   footer{background:#fff;border-top:1px solid var(--line);color:var(--muted)}
-  .foot{display:flex;align-items:center;justify-content:space-between;gap:22px;flex-wrap:wrap;padding:26px 0}
+   .foot{display:flex;align-items:center;justify-content:space-between;gap:22px;flex-wrap:wrap;padding-block:26px}
   .foot .brand{display:flex;align-items:center;gap:14px}
   .foot .brand img{height:36px}
   .foot .brand span{font-size:13px;color:var(--muted)}
@@ -147,14 +147,14 @@ const HTML = `
   .pay{background:#fff;border:1px solid var(--line);color:#4a5b61;font-size:11px;font-weight:600;letter-spacing:.02em;
     border-radius:6px;padding:6px 9px;height:32px;display:inline-flex;align-items:center;gap:6px}
   .pay img{height:20px;width:auto;display:block}
-  .foot-bottom{border-top:1px solid var(--line);text-align:center;padding:15px 0;font-size:12.5px}
+  .foot-bottom{border-top:1px solid var(--line);text-align:center;padding-block:15px;font-size:12.5px}
   .foot-bottom a:hover{color:var(--blue)}
   .foot-bottom .sep{color:var(--line);margin:0 4px}
   @media(max-width:620px){
-    .foot{flex-direction:column;justify-content:center;text-align:center;gap:16px;padding:28px 0 22px}
+    .foot{flex-direction:column;justify-content:center;text-align:center;gap:16px;padding-block:28px 22px}
     .foot .brand{flex-direction:column;gap:8px}
     .foot .pays{justify-content:center}
-    .foot-bottom{line-height:1.9;padding:16px 0 20px}
+    .foot-bottom{line-height:1.9;padding-block:16px 20px}
   }
   @media(min-width:621px) and (max-width:900px){
     .foot{justify-content:center;gap:30px}
