@@ -11,6 +11,7 @@ function pub(u: User) {
   return {
     id: u.id, email: u.email, name: u.name, subscriberNo: u.subscriberNo,
     role: u.role, plan: u.plan, status: u.status, currentPeriodEnd: u.currentPeriodEnd, createdAt: u.createdAt,
+    blocked: !!u.blocked,
   };
 }
 

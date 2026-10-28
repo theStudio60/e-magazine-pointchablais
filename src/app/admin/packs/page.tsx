@@ -30,7 +30,8 @@ const PACKS_CSS = `
   .pk td.price input{flex:1;min-width:0;width:100%}
   .pk td.act .btn{width:100%;justify-content:center}
   .pk td.act::before{display:none}
-  .pk-save .btn{width:100%}
+  .pk-save{text-align:center}
+  .pk-save .btn{width:auto}
 }
 @media(max-width:620px){
   .pk-form .grid2{grid-template-columns:1fr}

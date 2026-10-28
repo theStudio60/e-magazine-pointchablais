@@ -24,6 +24,7 @@ export type User = {
   resetExpires?: number | null;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
+  blocked?: boolean;
 };
 
 export type Edition = { id: string; date: string; title: string; publishAt?: string | null };
@@ -71,7 +72,7 @@ export type Settings = {
 };
 
 const DEFAULT_SITE: Site = {
-  contactEmail: "zoe@pointchablais.ch",
+  contactEmail: "abo@pointchablais.ch",
   address: "Rue Centrale 9, 1892 Lavey-Village",
   heroTitle: "Le journal qui réunit Aigle, Bex et le Chablais.",
 };
@@ -149,8 +150,8 @@ type UserRow = RowDataPacket & {
   reset_expires: number | string | null;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
+  blocked: number | null;
 };
-
 function toUser(r: UserRow): User {
   return {
     id: String(r.id),
@@ -169,6 +170,7 @@ function toUser(r: UserRow): User {
     resetExpires: r.reset_expires == null ? null : Number(r.reset_expires),
     stripeCustomerId: r.stripe_customer_id ?? undefined,
     stripeSubscriptionId: r.stripe_subscription_id ?? undefined,
+    blocked: !!r.blocked,
   };
 }
 
@@ -186,6 +188,7 @@ const USER_COLS: Partial<Record<keyof User, string>> = {
   resetExpires: "reset_expires",
   stripeCustomerId: "stripe_customer_id",
   stripeSubscriptionId: "stripe_subscription_id",
+  blocked: "blocked",
 };
 
 function userValue(key: keyof User, v: unknown): unknown {
@@ -193,12 +196,22 @@ function userValue(key: keyof User, v: unknown): unknown {
   return v;
 }
 
+// Colonne « blocked » (suspension admin) créée automatiquement — aucune migration manuelle.
+let _usersMigrated = false;
+async function ensureUsersSchema(): Promise<void> {
+  if (_usersMigrated) return;
+  try { await run("ALTER TABLE users ADD COLUMN IF NOT EXISTS blocked TINYINT(1) NOT NULL DEFAULT 0"); } catch {}
+  _usersMigrated = true;
+}
+
 async function oneUser(where: string, param: unknown): Promise<User | undefined> {
+  await ensureUsersSchema();
   const rows = await select<UserRow>(`SELECT * FROM users WHERE ${where} LIMIT 1`, [param]);
   return rows[0] ? toUser(rows[0]) : undefined;
 }
 
 export async function listUsers(): Promise<User[]> {
+  await ensureUsersSchema();
   const rows = await select<UserRow>("SELECT * FROM users ORDER BY id ASC");
   return rows.map(toUser);
 }
@@ -237,6 +250,7 @@ export async function createUser(u: Omit<User, "id" | "subscriberNo" | "createdA
 }
 
 export async function updateUser(id: string, patch: Partial<User>): Promise<User | undefined> {
+  await ensureUsersSchema();
   const sets: string[] = [];
   const vals: unknown[] = [];
   for (const k of Object.keys(patch) as (keyof User)[]) {
@@ -437,6 +451,16 @@ const toInvoice = (r: InvoiceRow): Invoice => ({
 
 export async function listInvoices(): Promise<Invoice[]> {
   const rows = await select<InvoiceRow>("SELECT * FROM invoices ORDER BY `date` DESC, id DESC");
+  return rows.map(toInvoice);
+}
+
+export async function getInvoiceById(id: string): Promise<Invoice | undefined> {
+  const rows = await select<InvoiceRow>("SELECT * FROM invoices WHERE id = ? LIMIT 1", [Number(id)]);
+  return rows[0] ? toInvoice(rows[0]) : undefined;
+}
+
+export async function listInvoicesByUser(userId: string): Promise<Invoice[]> {
+  const rows = await select<InvoiceRow>("SELECT * FROM invoices WHERE user_id = ? ORDER BY `date` DESC, id DESC", [Number(userId)]);
   return rows.map(toInvoice);
 }
 

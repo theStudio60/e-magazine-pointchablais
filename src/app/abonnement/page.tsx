@@ -35,7 +35,8 @@ export default async function Abonnement({
   if (!user) redirect("/connexion?next=/abonnement");
   if (user.role === "admin") redirect("/admin");
   if (user.status === "active") redirect("/espace");
-
+  if (user.blocked) redirect("/espace");
+  
   const settings = await getSettings();
   const key = sp?.plan || "";
   // Pack demandé s'il est actif ; sinon le pack recommandé, sinon le premier pack actif.

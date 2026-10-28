@@ -41,7 +41,12 @@ export default function Factures() {
                 <td>CHF {(r.amount / 100).toFixed(2)}</td>
                 <td>{fmt(r.date)}</td>
                 <td><span className={"pill " + (r.status === "paye" ? "a" : "w")}>{r.status === "paye" ? "Payé" : "En attente"}</span></td>
-                <td><button className="btn btn-o" onClick={() => toggle(r.id, r.status)}>{r.status === "paye" ? "Marquer en attente" : "Marquer payé"}</button></td>
+                <td>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                    <a className="btn btn-o" href={`/api/account/invoice/${r.id}`} target="_blank" rel="noreferrer" style={{ fontSize: 13, padding: "7px 12px" }}>Télécharger</a>
+                    <button className="btn btn-o" onClick={() => toggle(r.id, r.status)} style={{ fontSize: 13, padding: "7px 12px" }}>{r.status === "paye" ? "Marquer en attente" : "Marquer payé"}</button>
+                  </div>
+                </td>
               </tr>
             ))}
             {rows.length === 0 && <tr><td colSpan={7} style={{ color: "var(--muted)" }}>Aucune facture.</td></tr>}

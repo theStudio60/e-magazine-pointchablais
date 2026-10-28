@@ -5,7 +5,7 @@ import { call, postJson } from "@/lib/admin-fetch";
 import { Icon, StatCard, initials } from "../icons";
 import { useConfirm } from "../confirm";
 
-type U = { id: string; email: string; name: string; subscriberNo: string; role: string; plan: string | null; status: string; currentPeriodEnd: string | null; createdAt?: string };
+type U = { id: string; email: string; name: string; subscriberNo: string; role: string; plan: string | null; status: string; currentPeriodEnd: string | null; createdAt?: string; blocked?: boolean };
 type Stats = { total: number; actifs: number; inactifs: number; nouveaux: number };
 type Data = { items: U[]; total: number; pages: number; stats: Stats };
 type MenuState = { u: U; x: number; top?: number; bottom?: number };
@@ -90,11 +90,11 @@ export default function Membres() {
     setMenu(null);
     const ok = await confirm({
       title: "Désactiver ce membre ?",
-      message: <><b>{u.name || u.email}</b> n&apos;aura plus accès aux numéros. Vous pourrez le réactiver ensuite.</>,
+          message: <><b>{u.name || u.email}</b> sera <b>suspendu</b> : plus d&apos;accès aux numéros et impossible de se réabonner tant que vous ne l&apos;avez pas réactivé.</>,
       confirmLabel: "Désactiver",
       danger: true,
     });
-    if (ok) await patch(u.id, { status: "inactive" });
+    if (ok) await patch(u.id, { status: "inactive", blocked: true });
   }
   async function bulk(status: "active" | "inactive") {
     if (status === "inactive") {
@@ -108,7 +108,7 @@ export default function Membres() {
     }
     let fail = "";
     for (const id of sel) {
-      const r = await postJson(`/api/admin/users/${id}`, { status }, "PATCH");
+      const r = await postJson(`/api/admin/users/${id}`, { status, blocked: status === "inactive" }, "PATCH");
       if (!r.ok) { fail = r.error; break; }
     }
     if (fail) flash(fail, false); else flash(`${sel.length} membre(s) mis à jour.`);
@@ -229,7 +229,9 @@ export default function Membres() {
                 </td>
                 <td>{u.email}</td>
                 <td style={{ fontWeight: 500 }}>{cap(u.plan)}</td>
-                <td><span className={"pill " + (u.status === "active" ? "a" : "i")}>{u.status === "active" ? "Actif" : "Inactif"}</span></td>
+                  <td>{u.blocked
+                  ? <span className="pill i" style={{ background: "#fdeceb", color: "#b3261e" }}>Suspendu</span>
+                  : <span className={"pill " + (u.status === "active" ? "a" : "i")}>{u.status === "active" ? "Actif" : "Inactif"}</span>}</td>
                 <td style={{ textAlign: "right" }}>
                   <button className="kebab" aria-label="Actions" onClick={(e) => openMenu(e, u)}><Icon name="dots" size={20} /></button>
                 </td>
@@ -252,7 +254,7 @@ export default function Membres() {
         <div className="menu" style={{ left: menu.x, top: menu.top, bottom: menu.bottom }} onClick={(e) => e.stopPropagation()}>
           {menu.u.status === "active"
             ? <button onClick={() => deactivateOne(menu.u)}><Icon name="userX" size={17} /> Désactiver</button>
-            : <button onClick={() => patch(menu.u.id, { status: "active" })}><Icon name="userCheck" size={17} /> Activer</button>}
+            : <button onClick={() => patch(menu.u.id, { status: "active", blocked: false })}><Icon name="userCheck" size={17} /> Activer</button>}
           <hr />
           <div className="lab">Formule</div>
           {([["mensuel", "Mensuel"], ["annuel", "Annuel"], [null, "Aucune"]] as const).map(([k, l]) => (

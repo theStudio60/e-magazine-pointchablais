@@ -1,10 +1,11 @@
 import { ESPACE_CSS } from "@/lib/styles";
 import { getSessionUserId } from "@/lib/auth";
-import { getUserById, updateUser, getSettings, getPack, recordStripeInvoice } from "@/lib/db";
+import { getUserById, updateUser, getSettings, getPack, recordStripeInvoice, listInvoicesByUser } from "@/lib/db";
 import { stripe, stripeEnabled } from "@/lib/stripe";
 import { redirect } from "next/navigation";
 import LogoutButton from "./logout-button";
 import SubscribeButtons from "./subscribe-buttons";
+import InvoicesList from "./invoices-list";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -26,6 +27,12 @@ const EXTRA_CSS = `
   .pay{height:32px;padding:6px 9px;display:inline-flex;align-items:center;gap:6px}
   .pay img{height:20px;width:auto;display:block}
   .head .r .btn,.head .out{white-space:nowrap}
+  /* Compte abonné : répartir les infos + tuiles sur toute la largeur de la carte */
+  .panel.account{display:flex;align-items:stretch;gap:18px;flex-wrap:wrap}
+  .panel.account>div:first-child{flex:1 1 240px;min-width:0}
+  .panel.account .actions{display:flex;gap:16px;flex:2 1 380px}
+  .panel.account .actions .act-tile{flex:1 1 0;min-width:0;width:auto}
+  @media(max-width:700px){.panel.account .actions{flex:1 1 100%}}
   @media(max-width:620px){
     .head{flex-direction:column;gap:12px;padding-block:12px}
     .head img{height:34px}
@@ -58,7 +65,7 @@ export default async function Espace({
   // Retour d'un paiement Stripe (test/live) : on synchronise le statut
   // directement depuis Stripe, sans dépendre du webhook (utile en local).
   let justPaid = false;
-  if (sp?.ok && stripeEnabled && stripe && user.stripeCustomerId && (user.status !== "active" || !user.currentPeriodEnd)) {
+    if (sp?.ok && stripeEnabled && stripe && !user.blocked && user.stripeCustomerId && (user.status !== "active" || !user.currentPeriodEnd)) {
     try {
       const subs = await stripe.subscriptions.list({
         customer: user.stripeCustomerId,
@@ -96,6 +103,7 @@ export default async function Espace({
   const showPaid = justPaid || (sp?.ok === "1" && user.status === "active") || sp?.sim === "1";
 
   const active = user.status === "active";
+  const invoices = await listInvoicesByUser(user.id);
   const settings = await getSettings();
   const editions = settings.editions;
   // Formules proposées : uniquement les packs « Actifs » de l'administration.
@@ -164,7 +172,14 @@ export default async function Espace({
           <h2 className="sec">Mon abonnement</h2>
           <div className="rule"></div>
 
-          {active ? (
+          {user.blocked ? (
+            <div className="panel">
+              <p className="subtype">Compte suspendu</p>
+              <p style={{ color: "var(--muted)", fontSize: 14.5, margin: 0 }}>
+                Votre compte a été suspendu par l&apos;administration. L&apos;accès aux numéros et la souscription sont désactivés. Merci de nous contacter à <b>abo@pointchablais.ch</b> pour le réactiver.
+              </p>
+            </div>
+          ) : active ? (
             <div className="panel">
               <p className="subtype">
                 Abonnement {planName} (numérique)
@@ -182,6 +197,14 @@ export default async function Espace({
               </p>
               <SubscribeButtons packs={offers} />
             </div>
+          )}
+
+          {invoices.length > 0 && (
+            <>
+              <h2 className="sec">Mes factures</h2>
+              <div className="rule"></div>
+              <InvoicesList invoices={invoices.map((i) => ({ id: i.id, number: i.number, date: i.date, amount: i.amount, status: i.status }))} />
+            </>
           )}
 
           {active && (

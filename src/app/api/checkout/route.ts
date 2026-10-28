@@ -22,6 +22,7 @@ export async function POST(req: Request) {
   if (!uid) return NextResponse.json({ error: "Non connecté." }, { status: 401 });
   const user = await getUserById(uid);
   if (!user) return NextResponse.json({ error: "Utilisateur introuvable." }, { status: 404 });
+  if (user.blocked) return NextResponse.json({ error: "Votre compte est suspendu. Contactez-nous pour le réactiver." }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
   // Le pack est lu dans la base : n'importe quelle clé de pack actif est acceptée.

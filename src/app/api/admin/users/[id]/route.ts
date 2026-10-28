@@ -20,6 +20,7 @@ export const PATCH = safe(async (req: Request, ctx: { params: Promise<{ id: stri
   if (body.plan === "mensuel" || body.plan === "annuel" || body.plan === null) patch.plan = body.plan;
   if (body.role === "admin" || body.role === "user") patch.role = body.role;
   if (typeof body.name === "string") patch.name = body.name;
+  if (typeof body.blocked === "boolean") patch.blocked = body.blocked;
 
   const willActivate = patch.status === "active" && target.status !== "active";
   if (willActivate) {
