@@ -73,7 +73,7 @@ const HTML = `
   @keyframes pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.6);opacity:0}}
   @media(max-width:880px){.phone{right:-14px;bottom:-24px}.pill{left:-8px}.cover-side{margin-top:48px}}
   .hero{margin-bottom:-1px}
-  .wave{display:block;width:100%;height:auto;margin-top:-1px;margin-bottom:-2px}
+  .wave{display:block;width:100%;height:clamp(28px,6vw,48px);margin-top:-1px;margin-bottom:-2px}
 
   /* offres */
   .offres{background:var(--gray);padding:74px 30px 84px;position:relative}
@@ -150,6 +150,11 @@ const HTML = `
   .foot-bottom{border-top:1px solid var(--line);text-align:center;padding-block:15px;font-size:12.5px}
   .foot-bottom a:hover{color:var(--blue)}
   .foot-bottom .sep{color:var(--line);margin:0 4px}
+  .foot-right{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  .socials{display:flex;align-items:center;gap:14px}
+  .socials a{color:var(--muted);display:inline-flex;transition:color .2s}
+  .socials a:hover{color:var(--blue)}
+  @media(max-width:620px){.foot-right{flex-direction:column;gap:14px}}
   @media(max-width:620px){
     .foot{flex-direction:column;justify-content:center;text-align:center;gap:16px;padding-block:28px 22px}
     .foot .brand{flex-direction:column;gap:8px}
@@ -213,8 +218,11 @@ __OFFRES__
 <footer>
   <div class="wrap foot">
     <div class="brand"><img src="/logo.png" alt="Le Point Chablais"><span>Aigle, Bex et environs</span></div>
-    <div class="pays">
-      <span class="pay"><img src="/pay/visa.svg" alt="Visa"></span><span class="pay"><img src="/pay/mastercard.webp" alt="Mastercard"></span><span class="pay"><img src="/pay/twint.png" alt="TWINT"></span>
+    <div class="foot-right">
+      __SOCIAL__
+      <div class="pays">
+        <span class="pay"><img src="/pay/visa.svg" alt="Visa"></span><span class="pay"><img src="/pay/mastercard.webp" alt="Mastercard"></span><span class="pay"><img src="/pay/twint.png" alt="TWINT"></span>
+      </div>
     </div>
   </div>
   <div class="wrap foot-bottom">
@@ -298,8 +306,22 @@ export default async function Home() {
   // Titre d'accroche : celui des Paramètres (échappé), sinon le titre par défaut.
   const hero = String(site?.heroTitle ?? "").trim();
   const heroHtml = hero ? esc(hero) : DEFAULT_HERO;
+  // Réseaux sociaux : affichés seulement si renseignés dans Admin → Paramètres.
+  const FB = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13 22v-8h2.7l.4-3H13V9.1c0-.9.3-1.5 1.6-1.5H16V5c-.3 0-1.2-.1-2.2-.1-2.2 0-3.8 1.3-3.8 3.9V11H7.5v3H10v8h3z"/></svg>`;
+  const IG = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg>`;
+  const LI = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6.94 5.5a1.94 1.94 0 11-3.88 0 1.94 1.94 0 013.88 0zM3.56 8.5h3V21h-3V8.5zM9 8.5h2.88v1.71h.04c.4-.76 1.38-1.56 2.84-1.56 3.04 0 3.6 2 3.6 4.59V21h-3v-5.37c0-1.28-.02-2.93-1.79-2.93-1.79 0-2.06 1.4-2.06 2.84V21H9V8.5z"/></svg>`;
+  const socialLink = (url: string, lbl: string, svg: string) =>
+    `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" aria-label="${lbl}">${svg}</a>`;
+  const socialItems = [
+    site?.facebook ? socialLink(site.facebook, "Facebook", FB) : "",
+    site?.instagram ? socialLink(site.instagram, "Instagram", IG) : "",
+    site?.linkedin ? socialLink(site.linkedin, "LinkedIn", LI) : "",
+  ].filter(Boolean);
+  const socialHtml = socialItems.length ? `<div class="socials">${socialItems.join("")}</div>` : "";
+
   const html = HTML.replace("__HERO__", () => heroHtml)
     .replace("__GRID_MAX__", String(gridMax))
-    .replace("__OFFRES__", () => offres);
+    .replace("__OFFRES__", () => offres)
+    .replace("__SOCIAL__", () => socialHtml);
   return <main dangerouslySetInnerHTML={{ __html: html }} />;
 }

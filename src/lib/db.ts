@@ -63,7 +63,16 @@ export type EmailMsg = {
   status: "envoye" | "en_file";
 };
 
-export type Site = { contactEmail: string; address: string; heroTitle: string };
+export type Site = {
+  contactEmail: string;
+  address: string;
+  heroTitle: string;
+  phone?: string;
+  facebook?: string;
+  instagram?: string;
+  linkedin?: string;
+  legalNotice?: string;
+};
 
 export type Settings = {
   packs: Pack[];
@@ -75,8 +84,12 @@ const DEFAULT_SITE: Site = {
   contactEmail: "abo@pointchablais.ch",
   address: "Rue Centrale 9, 1892 Lavey-Village",
   heroTitle: "Le journal qui réunit Aigle, Bex et le Chablais.",
+  phone: "",
+  facebook: "",
+  instagram: "",
+  linkedin: "",
+  legalNotice: "",
 };
-
 // ---------------------------------------------------------------------------
 // Pool (réutilisé entre les rechargements à chaud en dev)
 // ---------------------------------------------------------------------------
